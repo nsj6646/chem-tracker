@@ -685,6 +685,10 @@ export function ShipmentsWorkspace({
 
       <MasterModal
         open={masterOpen}
+        kind="domestic_importer"
+        onChanged={() => {
+          void refreshAll(filter);
+        }}
         onClose={() => {
           setMasterOpen(false);
           void refreshAll(filter);
