@@ -12,12 +12,14 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "화학물질 수입량 집계 시스템 — 코리아 지사",
         "width": 1280,
         "height": 840,
         "minWidth": 1024,
         "minHeight": 700,
-        "resizable": true
+        "resizable": true,
+        "additionalBrowserArgs": "--js-flags=--max-old-space-size=128"
       }
     ],
     "security": {
@@ -28,9 +30,13 @@
     "active": true,
     "targets": ["nsis"],
     "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["Korean", "English"]
+        "languages": ["Korean", "English"],
+        "displayLanguageSelector": false
       }
     }
   }
