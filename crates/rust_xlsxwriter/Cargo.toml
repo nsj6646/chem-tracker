@@ -1,0 +1,12 @@
+[package]
+name = "rust_xlsxwriter"
+version = "0.79.0"
+edition = "2021"
+
+[lib]
+name = "rust_xlsxwriter"
+path = "src/lib.rs"
+
+[dependencies]
+quick-xml = "0.31.0"
+zip = { version = "2.4.2", default-features = false, features = ["deflate"] }

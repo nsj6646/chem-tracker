@@ -1,0 +1,23 @@
+[package]
+name = "chem_tracker"
+version = "0.1.0"
+edition = "2021"
+description = "Chemical Import Volume Tracker for Korea Branch"
+
+[lib]
+name = "chem_tracker"
+path = "src/lib.rs"
+
+[[bin]]
+name = "chem_tracker"
+path = "src/main.rs"
+
+[dependencies]
+rusqlite = { version = "0.31.0", features = ["bundled", "backup", "functions"] }
+calamine = "0.26.1"
+thiserror = "2.0.20"
+serde = { version = "1.0.229", default-features = false, features = ["std"] }
+rust_decimal = { path = "../crates/rust_decimal" }
+rust_xlsxwriter = { path = "../crates/rust_xlsxwriter" }
+unicode_width = { path = "../crates/unicode_width" }
+csv = { path = "../crates/csv" }

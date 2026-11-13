@@ -1,0 +1,8 @@
+[package]
+name = "unicode_width"
+version = "0.2.0"
+edition = "2021"
+
+[lib]
+name = "unicode_width"
+path = "src/lib.rs"

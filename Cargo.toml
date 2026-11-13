@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/rust_decimal",
+    "crates/unicode_width",
+    "crates/csv",
+    "crates/rust_xlsxwriter",
+    "src-tauri",
+]
