@@ -1,0 +1,49 @@
+name: Windows 11 Build & Test
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main, "feat/**"]
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies and run Bun tests
+        run: |
+          bun install
+          bun test
+          bun run build
+
+      - name: Setup Rust toolchain (x86_64-pc-windows-msvc)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "."
+
+      - name: Run Rust unit & integration tests
+        run: cargo test --offline
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build Windows 11 NSIS installer
+        run: cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis
+
+      - name: Upload NSIS installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chem-tracker-windows-nsis
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
