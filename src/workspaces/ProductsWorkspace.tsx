@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { MasterModal } from "./MasterModal";
 import {
   type BomRowDraft,
   type ChemicalSubstanceOption,
@@ -80,6 +81,7 @@ export function ProductsWorkspace({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [masterTarget, setMasterTarget] = useState<MasterModalTarget | null>(null);
 
   const loadReferenceAndList = useCallback(
     async (preferSelectId?: number | null) => {
@@ -201,12 +203,24 @@ export function ProductsWorkspace({
       onOpenMasterModal(target);
       return;
     }
-    const label = target === "overseas_branch" ? "해외지사" : "화학물질";
-    setFeedback({
-      ok: true,
-      text: `${label} 마스터 관리/수정 모달(Ticket 04) 연결 지점입니다.`,
-    });
+    setMasterTarget(target);
   };
+
+  const refreshAfterMasterChange = useCallback(async () => {
+    if (selectedProductId !== null) {
+      await loadReferenceAndList(selectedProductId);
+    } else {
+      const [prodList, branchList, substanceList] = await Promise.all([
+        ipc.listProducts(null, null),
+        ipc.listOverseasBranches(),
+        ipc.searchChemicalSubstances(null),
+      ]);
+      setProducts(prodList);
+      setBranches(branchList);
+      setSubstances(substanceList);
+    }
+    onProductsChanged?.();
+  }, [ipc, loadReferenceAndList, onProductsChanged, selectedProductId]);
 
   const handleComponentCasChange = (index: number, newCas: string) => {
     setFeedback(null);
@@ -944,6 +958,18 @@ export function ProductsWorkspace({
           </div>
         </form>
       </div>
+
+      <MasterModal
+        open={masterTarget !== null}
+        kind={masterTarget ?? "overseas_branch"}
+        onChanged={() => {
+          void refreshAfterMasterChange();
+        }}
+        onClose={() => {
+          setMasterTarget(null);
+          void refreshAfterMasterChange();
+        }}
+      />
     </section>
   );
 }
