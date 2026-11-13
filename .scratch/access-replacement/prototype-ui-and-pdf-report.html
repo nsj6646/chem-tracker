@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[PROTOTYPE] 코리아 지사 화학물질 수입량 추적기 — UI & A4 PDF 보고서 프로토타입</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --primary-soft: #dbeafe;
+      --success: #15803d;
+      --success-soft: #dcfce7;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --warn: #b45309;
+      --warn-soft: #fef3c7;
+      --font: "Malgun Gothic", "맑은 고딕", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      padding-bottom: 84px;
+    }
+
+    /* Prototype Banner & Guided Walkthrough Bar (Hidden in Print) */
+    .proto-header {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px 18px;
+      border-bottom: 2px solid #3b82f6;
+    }
+    .proto-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .proto-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-right: 8px;
+      letter-spacing: 0.03em;
+    }
+    .proto-question {
+      margin: 6px 0 0 0;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .scenario-bar {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #334155;
+    }
+    .scenario-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-scenario {
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .btn-scenario:hover { background: #475569; }
+    .btn-scenario.active {
+      background: #2563eb;
+      border-color: #60a5fa;
+      font-weight: 600;
+    }
+    .state-toast {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #93c5fd;
+    }
+
+    /* Common UI Elements */
+    button, select, input {
+      font-family: var(--font);
+      font-size: 12.5px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn:hover { background: var(--surface-alt); }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+    .btn-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: #fca5a5;
+    }
+    .btn-sm {
+      padding: 3px 8px;
+      font-size: 11.5px;
+    }
+
+    input[type="text"], input[type="number"], input[type="date"], select {
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--text);
+    }
+    input:focus, select:focus {
+      outline: 2px solid #93c5fd;
+      border-color: var(--primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    th, td {
+      border: 1px solid var(--border-light);
+      padding: 6px 9px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: var(--surface-alt);
+      font-weight: 700;
+      color: #334155;
+      white-space: nowrap;
+    }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: var(--mono);
+    }
+    td.mono {
+      font-family: var(--mono);
+    }
+    tr:hover td {
+      background: #f8fafc;
+    }
+    tr.selected-row td {
+      background: #eff6ff !important;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pill-ok { background: var(--success-soft); color: var(--success); }
+    .pill-err { background: var(--danger-soft); color: var(--danger); }
+    .pill-warn { background: var(--warn-soft); color: var(--warn); }
+    .pill-info { background: var(--primary-soft); color: var(--primary); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+    }
+    .card-title {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Variant A: Left Sidebar + Classic Master-Detail */
+    .layout-a {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      min-height: calc(100vh - 140px);
+    }
+    .sidebar-a {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sidebar-a-title {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 10px 12px;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 6px;
+      color: #93c5fd;
+    }
+    .nav-btn-a {
+      text-align: left;
+      background: transparent;
+      color: #cbd5e1;
+      border: none;
+      padding: 9px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-btn-a:hover { background: #334155; color: #fff; }
+    .nav-btn-a.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+    }
+    .main-a {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .split-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    /* Variant B: Dense 3-Pane All-in-One Workbench */
+    .layout-b {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .command-bar-b {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .workbench-b {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr 1.25fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    /* Variant C: Guided Step-by-Step Stepper Workflow */
+    .layout-c {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .stepper-c {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .step-btn-c {
+      padding: 10px 12px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .step-btn-c.active {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+    .step-num-c {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+    }
+    .step-title-c {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* A4 Report Paper Sheet */
+    .a4-sheet {
+      background: #ffffff;
+      border: 1px solid #94a3b8;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      padding: 24px 28px;
+      max-width: 840px;
+      margin: 0 auto;
+    }
+    .report-header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .report-title {
+      font-size: 19px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .report-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .report-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+    .report-meta-item strong {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .report-Confidential-banner {
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    /* Floating Prototype Variant Switcher (per UI.md) */
+    .proto-switcher {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #f8fafc;
+      border: 2px solid #3b82f6;
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      z-index: 9999;
+    }
+    .proto-switcher button {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 999px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .proto-switcher button:hover {
+      background: #334155;
+    }
+    .proto-switcher-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      min-width: 270px;
+      text-align: center;
+    }
+    .proto-switcher-hint {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* Print (@media print) — Outputs ONLY the A4 Report cleanly */
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+    @media print {
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+      }
+      .no-print,
+      .proto-header,
+      .scenario-bar,
+      .proto-switcher,
+      .sidebar-a,
+      .command-bar-b,
+      .stepper-c {
+        display: none !important;
+      }
+      .layout-a, .layout-b, .layout-c, .main-a {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .print-hide-pane {
+        display: none !important;
+      }
+      .a4-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Prototype Explanation Banner -->
+  <header class="proto-header no-print">
+    <div class="proto-header-top">
+      <div>
+        <span class="proto-badge">PROTOTYPE — THROWAWAY</span>
+        <strong>코리아 지사 화학물질 수입량 추적기 (Windows 11 Access 대체 앱) — UI 레이아웃 3종 &amp; 비즈니스 로직 검증</strong>
+      </div>
+      <div style="font-size:12px; color:#93c5fd;">
+        외부 47,531행 NCIS 엑셀 무의존 · 고객 자체 화학물질 DB(<code>CAS번호</code> + 선택적 <code>화학물질명</code>) · 고정소수점 연산
+      </div>
+    </div>
+    <p class="proto-question">
+      <strong>검증 질문 (Ticket 07):</strong>
+      (1) <code>수입제품 레시피(BOM)</code>의 <strong>함유율 합계 100% 강제 검증</strong> 및 <code>수입실적</code> 입력·엑셀 가져오기 미리보기 UX가 직관적인가?
+      (2) 연도·<code>국내 수입사</code>별 <strong>연간 화학물질 총 수입량(<code>kg</code> / <code>ton</code>)</strong> 집계 화면과
+      (3) <strong>A4 PDF 보고서</strong>(대외 제출용 요약 vs 내부 검증용 레시피 상세) 레이아웃이 실제 업무에 적합한가?
+    </p>
+  </header>
+
+  <!-- Guided Walkthrough Bar (LOGIC.md) -->
+  <section class="scenario-bar no-print">
+    <div class="scenario-buttons">
+      <strong style="font-size:12px; color:#93c5fd; margin-right:4px;">가이드 시나리오 체험:</strong>
+      <button class="btn-scenario" onclick="runScenario('reset')">기본 샘플 데이터 초기화</button>
+      <button class="btn-scenario" onclick="runScenario('invalid100')">시나리오 1: 레시피 합계 98.5% 저장 시도 (거부 확인)</button>
+      <button class="btn-scenario" onclick="runScenario('fix100')">시나리오 1-2: 레시피 합계 100.0% 보정 후 저장</button>
+      <button class="btn-scenario" onclick="runScenario('excelPreview')">시나리오 2: 엑셀(.xlsx) 일괄 가져오기 &amp; 중복 감지 미리보기</button>
+      <button class="btn-scenario" onclick="runScenario('reportInternal')">시나리오 3: A4 보고서 (대외용 요약 ↔ 내부 검증용 상세 비교)</button>
+    </div>
+    <div id="state-toast" class="state-toast">
+      상태 준비 완료: 샘플 수입제품 3건, 화학물질 6종, 수입실적 6건 로드됨
+    </div>
+  </section>
+
+  <!-- Main App Mount Root -->
+  <main id="app-root"></main>
+
+  <!-- Floating Bottom Variant Switcher (UI.md) -->
+  <nav class="proto-switcher no-print" aria-label="UI Variant Switcher">
+    <button type="button" onclick="cycleVariant(-1)" title="이전 레이아웃 (← 방향키)">← 이전</button>
+    <div>
+      <div id="switcher-label" class="proto-switcher-label">Variant A</div>
+      <div class="proto-switcher-hint">하단 버튼 또는 키보드 ← / → 키로 3가지 UI 구조 비교</div>
+    </div>
+    <button type="button" onclick="cycleVariant(1)" title="다음 레이아웃 (→ 방향키)">다음 →</button>
+  </nav>
+
+  <!-- ===================================================================== -->
+  <!-- 1. PORTABLE PURE DOMAIN LOGIC MODULE (LOGIC.md — Zero DOM dependency) -->
+  <!-- ===================================================================== -->
+  <script id="portable-domain-logic">
+    /**
+     * Pure domain module mirroring the Rust backend (`rusqlite` + `rust_decimal`).
+     * Uses fixed-point integer scaling (SCALE = 10,000 for 4 decimal places)
+     * so weight & percentage calculations never suffer IEEE-754 float drift.
+     */
+    const DomainLogic = (() => {
+      const SCALE = 10000; // 1.0000 === 10000
+      const HUNDRED_PCT_SCALED = 100 * SCALE; // 100.0000% === 1,000,000
+
+      function toScaled(value) {
+        const str = String(value ?? "0").trim();
+        if (!str || isNaN(Number(str))) return 0;
+        const negative = str.startsWith("-");
+        const clean = negative ? str.slice(1) : str;
+        const [intPart = "0", fracPart = ""] = clean.split(".");
+        const paddedFrac = (fracPart + "0000").slice(0, 4);
+        const scaled = parseInt(intPart, 10) * SCALE + parseInt(paddedFrac, 10);
+        return negative ? -scaled : scaled;
+      }
+
+      function fromScaled(scaled, decimals = 2) {
+        const num = Number(scaled) / SCALE;
+        return num.toLocaleString("ko-KR", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        });
+      }
+
+      /**
+       * Validates a product recipe's components.
+       * Rule (Ticket 06):
+       * - Every component must have a non-empty CAS number and 0 < pct <= 100
+       * - Exact sum of all components' weight percentages MUST equal 100.0000%
+       */
+      function validateRecipe(components) {
+        if (!Array.isArray(components) || components.length === 0) {
+          return {
+            valid: false,
+            totalPctScaled: 0,
+            totalPctFormatted: "0.00",
+            diffFormatted: "-100.00",
+            error: "최소 1개 이상의 구성성분(CAS번호 및 함유율%)을 입력해야 합니다.",
+          };
+        }
+
+        let sumScaled = 0;
+        const seenCas = new Set();
+
+        for (let i = 0; i < components.length; i++) {
+          const comp = components[i];
+          const cas = String(comp.casNo ?? "").trim();
+          const pctScaled = toScaled(comp.weightPct);
+
+          if (!cas) {
+            return {
+              valid: false,
+              totalPctScaled: sumScaled,
+              totalPctFormatted: fromScaled(sumScaled, 2),
+              diffFormatted: fromScaled(sumScaled - HUNDRED_PCT_SCALED, 2),
+              error: `${i + 1}번째 행의 CAS번호가 비어 있습니다.`,
+            };
+          }
+          if (seenCas.has(cas)) {
+            return {
+              valid: false,
+              totalPctScaled: sumScaled,
+              totalPctFormatted: fromScaled(sumScaled, 2),
+              diffFormatted: fromScaled(sumScaled - HUNDRED_PCT_SCALED, 2),
+              error: `동일 제품 내 중복된 CAS번호(${cas})가 존재합니다.`,
+            };
+          }
+          seenCas.add(cas);
+
+          if (pctScaled <= 0 || pctScaled > HUNDRED_PCT_SCALED) {
+            return {
+              valid: false,
+              totalPctScaled: sumScaled,
+              totalPctFormatted: fromScaled(sumScaled, 2),
+              diffFormatted: fromScaled(sumScaled - HUNDRED_PCT_SCALED, 2),
+              error: `CAS번호 ${cas}의 함유율(${comp.weightPct}%)은 0보다 크고 100 이하여야 합니다.`,
+            };
+          }
+          sumScaled += pctScaled;
+        }
+
+        const diffScaled = sumScaled - HUNDRED_PCT_SCALED;
+        const valid = diffScaled === 0;
+        return {
+          valid,
+          totalPctScaled: sumScaled,
+          totalPctFormatted: fromScaled(sumScaled, 2),
+          diffFormatted: (diffScaled > 0 ? "+" : "") + fromScaled(diffScaled, 2),
+          error: valid
+            ? null
+            : `함유율 합계가 ${fromScaled(sumScaled, 2)}%입니다. 정확히 100.00%가 되어야 저장할 수 있습니다 (차이: ${(diffScaled > 0 ? "+" : "") + fromScaled(diffScaled, 2)}%).`,
+        };
+      }
+
+      /**
+       * Computes Annual Substance Totals (`연간 화학물질 총 수입량`)
+       * filtered by year, domesticImporter, and optional overseasBranch.
+       * Zero dependency on external NCIS master Excel; uses customer's own substances map.
+       */
+      function aggregateAnnualSubstanceTotals(state, filter) {
+        const { year, domesticImporter, overseasBranch } = filter;
+        const productMap = new Map(state.products.map((p) => [p.productCode, p]));
+        const substanceMap = new Map(state.substances.map((s) => [s.casNo, s.name || ""]));
+
+        const matchingShipments = state.shipments.filter((sh) => {
+          const shYear = String(sh.importDate).slice(0, 4);
+          if (year && year !== "ALL" && shYear !== String(year)) return false;
+          if (domesticImporter && domesticImporter !== "ALL" && sh.domesticImporter !== domesticImporter) return false;
+          if (overseasBranch && overseasBranch !== "ALL" && sh.overseasBranch !== overseasBranch) return false;
+          return true;
+        });
+
+        // Map<casNo, { casNo, substanceName, totalKgScaled, breakdown: Array }>
+        const casTotals = new Map();
+
+        for (const sh of matchingShipments) {
+          const product = productMap.get(sh.productCode);
+          if (!product) continue;
+
+          // Weight in kg scaled by 10,000
+          const shipmentKgScaled = toScaled(sh.weightKg);
+
+          for (const comp of product.components) {
+            const pctScaled = toScaled(comp.weightPct);
+            // substanceKgScaled = shipmentKgScaled * (pctScaled / 100_0000)
+            // Use BigInt intermediate to prevent any overflow and preserve exact fixed-point precision
+            const substanceKgScaled = Number(
+              (BigInt(shipmentKgScaled) * BigInt(pctScaled)) / BigInt(HUNDRED_PCT_SCALED)
+            );
+
+            const substanceName =
+              comp.substanceName || substanceMap.get(comp.casNo) || "";
+
+            if (!casTotals.has(comp.casNo)) {
+              casTotals.set(comp.casNo, {
+                casNo: comp.casNo,
+                substanceName,
+                totalKgScaled: 0,
+                breakdown: [],
+              });
+            }
+            const entry = casTotals.get(comp.casNo);
+            if (!entry.substanceName && substanceName) {
+              entry.substanceName = substanceName;
+            }
+            entry.totalKgScaled += substanceKgScaled;
+            entry.breakdown.push({
+              shipmentId: sh.id,
+              importDate: sh.importDate,
+              domesticImporter: sh.domesticImporter,
+              overseasBranch: sh.overseasBranch,
+              productCode: sh.productCode,
+              productName: product.productName || "",
+              productWeightKgScaled: shipmentKgScaled,
+              weightPct: comp.weightPct,
+              substanceKgScaled,
+            });
+          }
+        }
+
+        const rows = Array.from(casTotals.values()).sort((a, b) => b.totalKgScaled - a.totalKgScaled);
+        const totalShipmentKgScaled = matchingShipments.reduce(
+          (acc, s) => acc + toScaled(s.weightKg),
+          0
+        );
+        const totalSubstanceKgScaled = rows.reduce((acc, r) => acc + r.totalKgScaled, 0);
+
+        return {
+          matchingShipments,
+          rows,
+          totalShipmentKgScaled,
+          totalSubstanceKgScaled,
+        };
+      }
+
+      /**
+       * Previews self-service Excel import rows for BOM & Shipments (Ticket 06 rules).
+       */
+      function previewExcelBatch(state, batch) {
+        // 1. Group BOM rows by productCode & validate 100% sum
+        const groupedBom = new Map();
+        for (const row of batch.bomRows) {
+          if (!groupedBom.has(row.productCode)) {
+            groupedBom.set(row.productCode, {
+              productCode: row.productCode,
+              productName: row.productName || "",
+              overseasBranch: row.overseasBranch,
+              components: [],
+            });
+          }
+          groupedBom.get(row.productCode).components.push({
+            casNo: row.casNo,
+            substanceName: row.substanceName || "",
+            weightPct: row.weightPct,
+          });
+        }
+
+        const existingProductCodes = new Set(state.products.map((p) => p.productCode));
+        const bomPreviews = [];
+        for (const [code, prod] of groupedBom.entries()) {
+          const validation = validateRecipe(prod.components);
+          const exists = existingProductCodes.has(code);
+          bomPreviews.push({
+            ...prod,
+            exists,
+            action: !validation.valid ? "오류(차단)" : exists ? "기존 레시피 덮어쓰기" : "신규 제품 등록",
+            validation,
+          });
+        }
+
+        // 2. Check shipment rows for exact duplicate tuple:
+        // (importDate, domesticImporter, overseasBranch, productCode, weightKg)
+        const existingTuples = new Set(
+          state.shipments.map(
+            (s) => `${s.importDate}|${s.domesticImporter}|${s.overseasBranch}|${s.productCode}|${toScaled(s.weightKg)}`
+          )
+        );
+
+        const shipmentPreviews = batch.shipmentRows.map((row) => {
+          const key = `${row.importDate}|${row.domesticImporter}|${row.overseasBranch}|${row.productCode}|${toScaled(row.weightKg)}`;
+          const isDuplicate = existingTuples.has(key);
+          return {
+            ...row,
+            isDuplicate,
+            action: isDuplicate ? "중복 의심 (기본 건너뛰기)" : "신규 수입실적 추가",
+          };
+        });
+
+        return { bomPreviews, shipmentPreviews };
+      }
+
+      return {
+        SCALE,
+        toScaled,
+        fromScaled,
+        validateRecipe,
+        aggregateAnnualSubstanceTotals,
+        previewExcelBatch,
+      };
+    })();
+  </script>
+
+  <!-- ===================================================================== -->
+  <!-- 2. APPLICATION STATE & 3 UI VARIANTS (UI.md + Interactive Handlers)   -->
+  <!-- ===================================================================== -->
+  <script>
+    const VARIANTS = {
+      A: {
+        key: "A",
+        name: "좌측 사이드바 + 마스터-디테일 (전통적 Access 데스크톱 스타일)",
+      },
+      B: {
+        key: "B",
+        name: "상단 커맨드 바 + 3-패널 올인원 워크벤치 (한 화면 동시 비교)",
+      },
+      C: {
+        key: "C",
+        name: "4단계 업무 위저드 스텝퍼 (비숙련 사용자 가이드형)",
+      },
+    };
+
+    function createInitialData() {
+      return {
+        domesticImporters: ["(주)대한케미칼", "한성정밀화학(주)", "세진소재산업(주)"],
+        overseasBranches: ["유럽지사 (독일)", "북미지사 (미국)", "일본지사 (도쿄)"],
+        substances: [
+          { casNo: "67-64-1", name: "아세톤 (Acetone)" },
+          { casNo: "108-88-3", name: "톨루엔 (Toluene)" },
+          { casNo: "141-78-6", name: "초산에틸 (Ethyl acetate)" },
+          { casNo: "71-36-3", name: "1-부탄올 (1-Butanol)" },
+          { casNo: "7732-18-5", name: "정제수 (Water)" },
+          { casNo: "1330-20-7", name: "크실렌 (Xylene)" },
+          { casNo: "9002-88-4", name: "" }, // Optional substance name left blank
+        ],
+        products: [
+          {
+            productCode: "PRD-EU-101",
+            productName: "코팅솔벤트 A-100",
+            overseasBranch: "유럽지사 (독일)",
+            components: [
+              { casNo: "67-64-1", substanceName: "아세톤 (Acetone)", weightPct: 45.25 },
+              { casNo: "108-88-3", substanceName: "톨루엔 (Toluene)", weightPct: 34.75 },
+              { casNo: "141-78-6", substanceName: "초산에틸 (Ethyl acetate)", weightPct: 20.00 },
+            ],
+          },
+          {
+            productCode: "PRD-EU-204",
+            productName: "고기능 세정제 B-200",
+            overseasBranch: "유럽지사 (독일)",
+            components: [
+              { casNo: "67-64-1", substanceName: "아세톤 (Acetone)", weightPct: 60.00 },
+              { casNo: "71-36-3", substanceName: "1-부탄올 (1-Butanol)", weightPct: 25.50 },
+              { casNo: "7732-18-5", substanceName: "정제수 (Water)", weightPct: 14.50 },
+            ],
+          },
+          {
+            productCode: "PRD-US-305",
+            productName: "표면처리제 C-300",
+            overseasBranch: "북미지사 (미국)",
+            components: [
+              { casNo: "1330-20-7", substanceName: "크실렌 (Xylene)", weightPct: 72.125 },
+              { casNo: "108-88-3", substanceName: "톨루엔 (Toluene)", weightPct: 17.875 },
+              { casNo: "9002-88-4", substanceName: "", weightPct: 10.00 },
+            ],
+          },
+        ],
+        shipments: [
+          { id: 1, importDate: "2026-01-15", domesticImporter: "(주)대한케미칼", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", weightKg: 2400.00 },
+          { id: 2, importDate: "2026-03-10", domesticImporter: "(주)대한케미칼", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-204", weightKg: 1500.50 },
+          { id: 3, importDate: "2026-05-22", domesticImporter: "(주)대한케미칼", overseasBranch: "북미지사 (미국)", productCode: "PRD-US-305", weightKg: 3200.00 },
+          { id: 4, importDate: "2026-08-04", domesticImporter: "(주)대한케미칼", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", weightKg: 1100.25 },
+          { id: 5, importDate: "2026-04-18", domesticImporter: "한성정밀화학(주)", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-204", weightKg: 4000.00 },
+          { id: 6, importDate: "2025-11-12", domesticImporter: "(주)대한케미칼", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", weightKg: 1800.00 },
+        ],
+        sampleExcelBatch: {
+          bomRows: [
+            { overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", productName: "코팅솔벤트 A-100 (26년 개정)", casNo: "67-64-1", substanceName: "아세톤 (Acetone)", weightPct: 50.00 },
+            { overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", productName: "코팅솔벤트 A-100 (26년 개정)", casNo: "108-88-3", substanceName: "톨루엔 (Toluene)", weightPct: 30.00 },
+            { overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", productName: "코팅솔벤트 A-100 (26년 개정)", casNo: "141-78-6", substanceName: "초산에틸 (Ethyl acetate)", weightPct: 20.00 },
+            { overseasBranch: "일본지사 (도쿄)", productCode: "PRD-JP-401", productName: "정밀에칭액 D-400", casNo: "7732-18-5", substanceName: "정제수 (Water)", weightPct: 85.00 },
+            { overseasBranch: "일본지사 (도쿄)", productCode: "PRD-JP-401", productName: "정밀에칭액 D-400", casNo: "71-36-3", substanceName: "1-부탄올 (1-Butanol)", weightPct: 12.00 }, // 97% sum -> blocked validation example
+          ],
+          shipmentRows: [
+            // Exact duplicate tuple of shipment #1 -> auto-skip candidate
+            { importDate: "2026-01-15", domesticImporter: "(주)대한케미칼", overseasBranch: "유럽지사 (독일)", productCode: "PRD-EU-101", weightKg: 2400.00 },
+            // New shipment record
+            { importDate: "2026-09-19", domesticImporter: "(주)대한케미칼", overseasBranch: "북미지사 (미국)", productCode: "PRD-US-305", weightKg: 1750.00 },
+          ],
+        },
+      };
+    }
+
+    let appState = {
+      ...createInitialData(),
+      variant: new URLSearchParams(window.location.search).get("variant") || "A",
+      activeTabA: "bom", // 'bom' | 'shipments' | 'excel' | 'report'
+      activeStepC: 1,    // 1 | 2 | 3 | 4
+      selectedProductCode: "PRD-EU-101",
+      editingProduct: null, // working copy of currently selected product BOM
+      recipeSaveFeedback: null,
+      filter: {
+        year: "2026",
+        domesticImporter: "(주)대한케미칼",
+        overseasBranch: "ALL",
+      },
+      reportMode: "external", // 'external' (summary for importer) | 'internal' (detailed BOM breakdown)
+      expandedCas: "67-64-1",
+      excelOverwriteExistingBom: true,
+      excelSkipDuplicateShipments: true,
+      excelCommittedMessage: null,
+    };
+
+    if (!VARIANTS[appState.variant]) {
+      appState.variant = "A";
+    }
+
+    function loadEditingProduct(productCode) {
+      const found = appState.products.find((p) => p.productCode === productCode) || appState.products[0];
+      appState.selectedProductCode = found.productCode;
+      appState.editingProduct = JSON.parse(JSON.stringify(found));
+      appState.recipeSaveFeedback = null;
+    }
+    loadEditingProduct(appState.selectedProductCode);
+
+    function setToast(msg) {
+      const el = document.getElementById("state-toast");
+      if (el) el.textContent = msg;
+    }
+
+    // URL Search Param & Variant Switcher (UI.md)
+    function setVariant(key) {
+      if (!VARIANTS[key]) return;
+      appState.variant = key;
+      const url = new URL(window.location.href);
+      url.searchParams.set("variant", key);
+      window.history.replaceState({}, "", url.toString());
+      renderApp();
+    }
+
+    function cycleVariant(delta) {
+      const keys = Object.keys(VARIANTS);
+      const idx = keys.indexOf(appState.variant);
+      const nextIdx = (idx + delta + keys.length) % keys.length;
+      setVariant(keys[nextIdx]);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable)) {
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        cycleVariant(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        cycleVariant(1);
+      }
+    });
+
+    // Guided Walkthrough Scenarios (LOGIC.md)
+    function runScenario(name) {
+      if (name === "reset") {
+        const fresh = createInitialData();
+        Object.assign(appState, fresh);
+        loadEditingProduct("PRD-EU-101");
+        appState.excelCommittedMessage = null;
+        setToast("초기화 완료: 기본 합성 샘플 데이터(합계 100% 정상 레시피 3건, 수입실적 6건)로 복원되었습니다.");
+      } else if (name === "invalid100") {
+        loadEditingProduct("PRD-EU-101");
+        // Change 20.00% -> 18.50% so sum is 98.50%
+        appState.editingProduct.components[2].weightPct = 18.5;
+        appState.activeTabA = "bom";
+        appState.activeStepC = 1;
+        const check = DomainLogic.validateRecipe(appState.editingProduct.components);
+        appState.recipeSaveFeedback = {
+          ok: false,
+          text: `[저장 거부됨] ${check.error}`,
+        };
+        setToast("시나리오 1 실행: PRD-EU-101의 초산에틸 함유율을 18.5%로 낮춰 합계가 98.50%가 되도록 설정했습니다. (저장 차단 확인)");
+      } else if (name === "fix100") {
+        loadEditingProduct("PRD-EU-101");
+        appState.editingProduct.components[2].weightPct = 20.0;
+        const check = DomainLogic.validateRecipe(appState.editingProduct.components);
+        if (check.valid) {
+          const idx = appState.products.findIndex((p) => p.productCode === appState.editingProduct.productCode);
+          if (idx >= 0) appState.products[idx] = JSON.parse(JSON.stringify(appState.editingProduct));
+          appState.recipeSaveFeedback = {
+            ok: true,
+            text: "[저장 완료] 함유율 합계가 정확히 100.00%이므로 SQLite 트랜잭션에 반영되었습니다.",
+          };
+        }
+        appState.activeTabA = "bom";
+        appState.activeStepC = 1;
+        setToast("시나리오 1-2 실행: 함유율 합계를 100.00%로 보정하여 정상 저장되었습니다.");
+      } else if (name === "excelPreview") {
+        appState.activeTabA = "excel";
+        appState.activeStepC = 2;
+        setToast("시나리오 2 실행: 엑셀 일괄 가져오기 미리보기 — 97% 불완전 레시피 차단 및 동일 수입실적 중복 자동 건너뛰기를 확인하세요.");
+      } else if (name === "reportInternal") {
+        appState.activeTabA = "report";
+        appState.activeStepC = 4;
+        appState.reportMode = appState.reportMode === "external" ? "internal" : "external";
+        setToast(
+          appState.reportMode === "internal"
+            ? "시나리오 3 실행: A4 보고서를 [내부 검증용 상세 모드]로 전환했습니다 (제품별 기밀 함유율% 및 환산 과정 노출)."
+            : "시나리오 3 실행: A4 보고서를 [대외 제출용 요약 모드]로 전환했습니다 (기밀 레시피 함유율% 숨김, CAS별 총량만 표시)."
+        );
+      }
+      renderApp();
+    }
+
+    // Interactive Form Handlers
+    function selectProductForEdit(code) {
+      loadEditingProduct(code);
+      renderApp();
+    }
+
+    function updateComponentField(index, field, value) {
+      if (!appState.editingProduct || !appState.editingProduct.components[index]) return;
+      appState.editingProduct.components[index][field] =
+        field === "weightPct" ? value : value;
+      appState.recipeSaveFeedback = null;
+      renderApp();
+    }
+
+    function addComponentRow() {
+      appState.editingProduct.components.push({
+        casNo: "",
+        substanceName: "",
+        weightPct: 0,
+      });
+      appState.recipeSaveFeedback = null;
+      renderApp();
+    }
+
+    function removeComponentRow(index) {
+      appState.editingProduct.components.splice(index, 1);
+      appState.recipeSaveFeedback = null;
+      renderApp();
+    }
+
+    function saveEditingRecipe() {
+      const check = DomainLogic.validateRecipe(appState.editingProduct.components);
+      if (!check.valid) {
+        appState.recipeSaveFeedback = {
+          ok: false,
+          text: `[저장 거부] ${check.error}`,
+        };
+        setToast(`레시피 저장 거부: ${check.error}`);
+        renderApp();
+        return;
+      }
+
+      // Upsert into products and customer substances list
+      const idx = appState.products.findIndex(
+        (p) => p.productCode === appState.editingProduct.productCode
+      );
+      const cleanCopy = JSON.parse(JSON.stringify(appState.editingProduct));
+      if (idx >= 0) {
+        appState.products[idx] = cleanCopy;
+      } else {
+        appState.products.push(cleanCopy);
+      }
+
+      for (const comp of cleanCopy.components) {
+        const sub = appState.substances.find((s) => s.casNo === comp.casNo);
+        if (!sub) {
+          appState.substances.push({ casNo: comp.casNo, name: comp.substanceName || "" });
+        } else if (comp.substanceName && !sub.name) {
+          sub.name = comp.substanceName;
+        }
+      }
+
+      appState.recipeSaveFeedback = {
+        ok: true,
+        text: `[저장 완료] ${cleanCopy.productCode} 레시피(합계 100.00%)가 반영되어 연간 집계에 즉시 업데이트되었습니다.`,
+      };
+      setToast(`${cleanCopy.productCode} 레시피 저장 완료 (합계 100.00%)`);
+      renderApp();
+    }
+
+    function handleAddShipment(e) {
+      e.preventDefault();
+      const form = e.target;
+      const importDate = form.importDate.value;
+      const domesticImporter = form.domesticImporter.value;
+      const productCode = form.productCode.value;
+      const weightKg = parseFloat(form.weightKg.value);
+
+      const prod = appState.products.find((p) => p.productCode === productCode);
+      if (!importDate || !domesticImporter || !prod || isNaN(weightKg) || weightKg <= 0) {
+        setToast("수입실적 입력 오류: 모든 필수 항목과 0보다 큰 수입량(kg)을 입력하세요.");
+        return;
+      }
+
+      const nextId = appState.shipments.reduce((m, s) => Math.max(m, s.id), 0) + 1;
+      appState.shipments.unshift({
+        id: nextId,
+        importDate,
+        domesticImporter,
+        overseasBranch: prod.overseasBranch,
+        productCode,
+        weightKg,
+      });
+      setToast(`신규 수입실적 추가됨: ${importDate} | ${domesticImporter} | ${productCode} (${weightKg.toLocaleString()} kg)`);
+      renderApp();
+    }
+
+    function deleteShipment(id) {
+      appState.shipments = appState.shipments.filter((s) => s.id !== id);
+      setToast(`수입실적 #${id} 삭제됨`);
+      renderApp();
+    }
+
+    function updateFilter(field, value) {
+      appState.filter[field] = value;
+      renderApp();
+    }
+
+    function toggleCasDrilldown(casNo) {
+      appState.expandedCas = appState.expandedCas === casNo ? null : casNo;
+      renderApp();
+    }
+
+    function commitExcelPreview() {
+      const preview = DomainLogic.previewExcelBatch(appState, appState.sampleExcelBatch);
+      let updatedBomCount = 0;
+      let skippedBomCount = 0;
+      let insertedShipmentCount = 0;
+      let skippedShipmentCount = 0;
+
+      for (const item of preview.bomPreviews) {
+        if (!item.validation.valid) {
+          skippedBomCount++;
+          continue;
+        }
+        const existingIdx = appState.products.findIndex((p) => p.productCode === item.productCode);
+        if (existingIdx >= 0) {
+          if (appState.excelOverwriteExistingBom) {
+            appState.products[existingIdx] = {
+              productCode: item.productCode,
+              productName: item.productName,
+              overseasBranch: item.overseasBranch,
+              components: item.components,
+            };
+            updatedBomCount++;
+          } else {
+            skippedBomCount++;
+          }
+        } else {
+          appState.products.push({
+            productCode: item.productCode,
+            productName: item.productName,
+            overseasBranch: item.overseasBranch,
+            components: item.components,
+          });
+          updatedBomCount++;
+        }
+      }
+
+      for (const sh of preview.shipmentPreviews) {
+        if (sh.isDuplicate && appState.excelSkipDuplicateShipments) {
+          skippedShipmentCount++;
+          continue;
+        }
+        const nextId = appState.shipments.reduce((m, s) => Math.max(m, s.id), 0) + 1;
+        appState.shipments.unshift({
+          id: nextId,
+          importDate: sh.importDate,
+          domesticImporter: sh.domesticImporter,
+          overseasBranch: sh.overseasBranch,
+          productCode: sh.productCode,
+          weightKg: sh.weightKg,
+        });
+        insertedShipmentCount++;
+      }
+
+      loadEditingProduct(appState.selectedProductCode);
+      appState.excelCommittedMessage = `반영 완료: 레시피 ${updatedBomCount}건 반영 (오류/제외 ${skippedBomCount}건), 수입실적 ${insertedShipmentCount}건 추가 (중복 건너뛰기 ${skippedShipmentCount}건)`;
+      setToast(appState.excelCommittedMessage);
+      renderApp();
+    }
+
+    // =====================================================================
+    // 3. SHARED PARTIAL RENDERERS (BOM Editor, Shipments, Excel, A4 Report)
+    // =====================================================================
+
+    function renderProductAndBomSection() {
+      const ep = appState.editingProduct;
+      const validation = DomainLogic.validateRecipe(ep.components);
+
+      return `
+        <div class="split-2">
+          <!-- Left: Product Master List -->
+          <div class="card">
+            <div class="card-title">
+              <span>수입제품 목록 (<code>수입제품코드</code>)</span>
+              <span class="pill pill-info">총 ${appState.products.length}개 제품</span>
+            </div>
+            <p style="margin:0 0 8px 0; font-size:12px; color:var(--text-muted);">
+              제품을 클릭하면 우측에서 기밀 <strong>제품 구성성분(레시피/BOM)</strong>을 편집·검증합니다.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>수입제품코드</th>
+                  <th>제품명(선택)</th>
+                  <th>해외지사</th>
+                  <th class="num">성분 수</th>
+                  <th class="num">함유율 합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${appState.products
+                  .map((p) => {
+                    const v = DomainLogic.validateRecipe(p.components);
+                    const isSelected = p.productCode === appState.selectedProductCode;
+                    return `
+                      <tr class="${isSelected ? "selected-row" : ""}" style="cursor:pointer;" onclick="selectProductForEdit('${p.productCode}')">
+                        <td class="mono"><strong>${p.productCode}</strong></td>
+                        <td>${p.productName || '<span style="color:#94a3b8;">(미입력)</span>'}</td>
+                        <td>${p.overseasBranch}</td>
+                        <td class="num">${p.components.length}종</td>
+                        <td class="num">
+                          <span class="pill ${v.valid ? "pill-ok" : "pill-err"}">${v.totalPctFormatted}%</span>
+                        </td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Right: Confidential Recipe (BOM) Editor enforcing exact 100% -->
+          <div class="card">
+            <div class="card-title">
+              <span>제품 구성성분 (레시피 / BOM) 편집 — <code>${ep.productCode}</code></span>
+              <span class="pill ${validation.valid ? "pill-ok" : "pill-err"}">
+                합계: ${validation.totalPctFormatted}% ${validation.valid ? "(100% 일치)" : `(차이 ${validation.diffFormatted}%)`}
+              </span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+              <label>
+                <span style="font-size:11.5px; color:var(--text-muted);">수입제품코드</span><br/>
+                <input type="text" value="${ep.productCode}" readonly style="background:#f1f5f9; width:130px; font-family:var(--mono);" />
+              </label>
+              <label>
+                <span style="font-size:11.5px; color:var(--text-muted);">제품명 (선택)</span><br/>
+                <input type="text" value="${ep.productName || ""}" oninput="appState.editingProduct.productName = this.value" style="width:170px;" />
+              </label>
+              <label>
+                <span style="font-size:11.5px; color:var(--text-muted);">공급 해외지사</span><br/>
+                <select onchange="appState.editingProduct.overseasBranch = this.value">
+                  ${appState.overseasBranches
+                    .map(
+                      (b) =>
+                        `<option value="${b}" ${b === ep.overseasBranch ? "selected" : ""}>${b}</option>`
+                    )
+                    .join("")}
+                </select>
+              </label>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:140px;">CAS번호 (고유키)</th>
+                  <th>화학물질명 (선택 입력)</th>
+                  <th class="num" style="width:120px;">함유율 (%)</th>
+                  <th style="width:65px; text-align:center;">삭제</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ep.components
+                  .map(
+                    (c, idx) => `
+                  <tr>
+                    <td>
+                      <input type="text" class="mono" style="width:100%;" value="${c.casNo}"
+                        placeholder="예: 67-64-1"
+                        onchange="updateComponentField(${idx}, 'casNo', this.value)" />
+                    </td>
+                    <td>
+                      <input type="text" style="width:100%;" value="${c.substanceName || ""}"
+                        placeholder="선택 입력 (미입력 가능)"
+                        onchange="updateComponentField(${idx}, 'substanceName', this.value)" />
+                    </td>
+                    <td class="num">
+                      <input type="number" step="0.001" style="width:100%; text-align:right; font-family:var(--mono);"
+                        value="${c.weightPct}"
+                        onchange="updateComponentField(${idx}, 'weightPct', this.value)" />
+                    </td>
+                    <td style="text-align:center;">
+                      <button type="button" class="btn btn-danger btn-sm" onclick="removeComponentRow(${idx})">삭제</button>
+                    </td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="2" style="text-align:right;">구성성분 함유율 합계 (100.00% 필수):</th>
+                  <th class="num" style="color:${validation.valid ? "var(--success)" : "var(--danger)"}; font-size:13.5px;">
+                    ${validation.totalPctFormatted}%
+                  </th>
+                  <th></th>
+                </tr>
+              </tfoot>
+            </table>
+
+            ${
+              !validation.valid
+                ? `<div style="margin-top:8px; padding:8px 10px; background:var(--danger-soft); color:var(--danger); border-radius:4px; font-weight:600; font-size:12px;">
+                    ⚠️ ${validation.error}
+                   </div>`
+                : `<div style="margin-top:8px; padding:8px 10px; background:var(--success-soft); color:var(--success); border-radius:4px; font-weight:600; font-size:12px;">
+                    ✓ 함유율 합계가 정확히 100.00%입니다. 저장 가능합니다.
+                   </div>`
+            }
+
+            ${
+              appState.recipeSaveFeedback
+                ? `<div style="margin-top:6px; padding:7px 10px; border-radius:4px; font-size:12px; font-weight:700; background:${
+                    appState.recipeSaveFeedback.ok ? "#dbeafe" : "#fee2e2"
+                  }; color:${appState.recipeSaveFeedback.ok ? "#1e40af" : "#991b1b"};">
+                    ${appState.recipeSaveFeedback.text}
+                   </div>`
+                : ""
+            }
+
+            <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+              <button type="button" class="btn" onclick="addComponentRow()">+ 구성성분 행 추가</button>
+              <button type="button" class="btn btn-primary" onclick="saveEditingRecipe()">레시피 저장 (100% 검증)</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderShipmentsSection() {
+      return `
+        <div class="card">
+          <div class="card-title">
+            <span>수입실적 (<code>수입일자</code> · <code>국내 수입사</code> · <code>해외지사</code> · <code>수입제품코드</code> · <code>제품 수입량 kg</code>)</span>
+            <span class="pill pill-info">총 ${appState.shipments.length}건</span>
+          </div>
+
+          <form onsubmit="handleAddShipment(event)" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; background:var(--surface-alt); padding:10px; border:1px solid var(--border-light); border-radius:5px; margin-bottom:12px;">
+            <label>
+              <span style="font-size:11px; color:var(--text-muted);">수입일자</span><br/>
+              <input type="date" name="importDate" value="2026-10-05" required />
+            </label>
+            <label>
+              <span style="font-size:11px; color:var(--text-muted);">국내 수입사</span><br/>
+              <select name="domesticImporter">
+                ${appState.domesticImporters.map((d) => `<option value="${d}">${d}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              <span style="font-size:11px; color:var(--text-muted);">수입제품코드 (해외지사 자동연결)</span><br/>
+              <select name="productCode">
+                ${appState.products
+                  .map(
+                    (p) =>
+                      `<option value="${p.productCode}">${p.productCode} — ${p.productName || ""} (${p.overseasBranch})</option>`
+                  )
+                  .join("")}
+              </select>
+            </label>
+            <label>
+              <span style="font-size:11px; color:var(--text-muted);">제품 수입량 (kg)</span><br/>
+              <input type="number" step="0.01" name="weightKg" value="1000.00" style="width:120px; text-align:right; font-family:var(--mono);" required />
+            </label>
+            <button type="submit" class="btn btn-primary">+ 수입실적 등록</button>
+          </form>
+
+          <table>
+            <thead>
+              <tr>
+                <th>수입일자</th>
+                <th>국내 수입사</th>
+                <th>해외지사</th>
+                <th>수입제품코드</th>
+                <th class="num">제품 수입량 (kg)</th>
+                <th class="num">환산 중량 (ton)</th>
+                <th style="width:65px; text-align:center;">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${appState.shipments
+                .map((s) => {
+                  const kgScaled = DomainLogic.toScaled(s.weightKg);
+                  const tonFormatted = DomainLogic.fromScaled(Math.round(kgScaled / 1000), 3);
+                  return `
+                    <tr>
+                      <td class="mono">${s.importDate}</td>
+                      <td><strong>${s.domesticImporter}</strong></td>
+                      <td>${s.overseasBranch}</td>
+                      <td class="mono">${s.productCode}</td>
+                      <td class="num">${DomainLogic.fromScaled(kgScaled, 2)} kg</td>
+                      <td class="num" style="color:var(--text-muted);">${tonFormatted} ton</td>
+                      <td style="text-align:center;">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteShipment(${s.id})">삭제</button>
+                      </td>
+                    </tr>
+                  `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderExcelImportSection() {
+      const preview = DomainLogic.previewExcelBatch(appState, appState.sampleExcelBatch);
+      return `
+        <div class="card">
+          <div class="card-title">
+            <span>셀프 서비스 엑셀(<code>.xlsx</code> / <code>.csv</code>) 일괄 가져오기 &amp; 검증 미리보기</span>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-sm" onclick="setToast('표준 레시피(BOM) 엑셀 템플릿 양식: 해외지사 | 수입제품코드 | 제품명(선택) | CAS번호 | 화학물질명(선택) | 함유율(%)')">📥 레시피(.xlsx) 양식 다운로드</button>
+              <button type="button" class="btn btn-sm" onclick="setToast('표준 수입실적 엑셀 템플릿 양식: 수입일자(YYYY-MM-DD) | 국내 수입사 | 해외지사 | 수입제품코드 | 제품 수입량(kg)')">📥 수입실적(.xlsx) 양식 다운로드</button>
+            </div>
+          </div>
+
+          <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-muted);">
+            고객이 기존 MS Access에서 내보낸 기밀 레시피 및 수입실적 엑셀 파일을 선택하면, <strong>DB 반영 전 미리보기</strong>에서
+            (1) 제품별 함유율 합계 <code>100%</code> 여부와 (2) 기존 데이터 중복 처리 방침을 검증합니다.
+          </p>
+
+          <div style="display:flex; gap:18px; align-items:center; background:var(--surface-alt); padding:10px 12px; border:1px solid var(--border-light); border-radius:5px; margin-bottom:12px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+              <input type="checkbox" ${appState.excelOverwriteExistingBom ? "checked" : ""}
+                onchange="appState.excelOverwriteExistingBom = this.checked; renderApp();" />
+              동일 <code>수입제품코드</code> 재업로드 시 기존 레시피 덮어쓰기 (해제 시 건너뛰기)
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+              <input type="checkbox" ${appState.excelSkipDuplicateShipments ? "checked" : ""}
+                onchange="appState.excelSkipDuplicateShipments = this.checked; renderApp();" />
+              동일 수입실적 튜플 <code>(수입일자, 국내 수입사, 해외지사, 수입제품코드, 수입량)</code> 자동 건너뛰기
+            </label>
+            <button type="button" class="btn btn-success" onclick="commitExcelPreview()">✓ 검증 통과 항목만 SQLite 트랜잭션 반영</button>
+          </div>
+
+          ${
+            appState.excelCommittedMessage
+              ? `<div style="margin-bottom:12px; padding:8px 12px; background:var(--success-soft); color:var(--success); border-radius:4px; font-weight:700;">
+                  ${appState.excelCommittedMessage}
+                 </div>`
+              : ""
+          }
+
+          <div class="split-2">
+            <div>
+              <h4 style="margin:0 0 6px 0; font-size:13px;">1) 제품 레시피(BOM) 엑셀 미리보기</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>수입제품코드</th>
+                    <th>해외지사</th>
+                    <th class="num">함유율 합계</th>
+                    <th>검증 및 처리 방침</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${preview.bomPreviews
+                    .map(
+                      (b) => `
+                    <tr>
+                      <td class="mono"><strong>${b.productCode}</strong><br/><span style="font-size:11px; color:var(--text-muted);">${b.productName}</span></td>
+                      <td>${b.overseasBranch}</td>
+                      <td class="num">
+                        <span class="pill ${b.validation.valid ? "pill-ok" : "pill-err"}">${b.validation.totalPctFormatted}%</span>
+                      </td>
+                      <td>
+                        ${
+                          b.validation.valid
+                            ? `<span class="pill pill-info">${
+                                b.exists
+                                  ? appState.excelOverwriteExistingBom
+                                    ? "기존 레시피 덮어쓰기"
+                                    : "기존 제품 건너뛰기"
+                                  : "신규 등록"
+                              }</span>`
+                            : `<span class="pill pill-err">차단: ${b.validation.error}</span>`
+                        }
+                      </td>
+                    </tr>
+                  `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <h4 style="margin:0 0 6px 0; font-size:13px;">2) 수입실적 엑셀 미리보기</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>수입일자</th>
+                    <th>국내 수입사</th>
+                    <th>수입제품코드</th>
+                    <th class="num">수입량 (kg)</th>
+                    <th>중복 검사 결과</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${preview.shipmentPreviews
+                    .map(
+                      (s) => `
+                    <tr>
+                      <td class="mono">${s.importDate}</td>
+                      <td>${s.domesticImporter}</td>
+                      <td class="mono">${s.productCode}</td>
+                      <td class="num">${s.weightKg.toLocaleString()} kg</td>
+                      <td>
+                        ${
+                          s.isDuplicate
+                            ? `<span class="pill pill-warn">${
+                                appState.excelSkipDuplicateShipments
+                                  ? "중복 감지 → 건너뛰기"
+                                  : "중복 무시 → 강제 추가"
+                              }</span>`
+                            : `<span class="pill pill-ok">신규 추가</span>`
+                        }
+                      </td>
+                    </tr>
+                  `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAnnualQueryAndReportSection(compact = false) {
+      const agg = DomainLogic.aggregateAnnualSubstanceTotals(appState, appState.filter);
+      const totalShipmentTon = DomainLogic.fromScaled(Math.round(agg.totalShipmentKgScaled / 1000), 3);
+      const totalSubstanceTon = DomainLogic.fromScaled(Math.round(agg.totalSubstanceKgScaled / 1000), 3);
+
+      return `
+        <!-- Filter & Report Action Controls (Hidden when printing A4) -->
+        <div class="card no-print" style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <strong>연간 화학물질 총 수입량 조회 필터:</strong>
+              <label>
+                연도:
+                <select onchange="updateFilter('year', this.value)">
+                  <option value="2026" ${appState.filter.year === "2026" ? "selected" : ""}>2026년</option>
+                  <option value="2025" ${appState.filter.year === "2025" ? "selected" : ""}>2025년</option>
+                  <option value="ALL" ${appState.filter.year === "ALL" ? "selected" : ""}>전체 연도</option>
+                </select>
+              </label>
+              <label>
+                국내 수입사:
+                <select onchange="updateFilter('domesticImporter', this.value)">
+                  ${appState.domesticImporters
+                    .map(
+                      (d) =>
+                        `<option value="${d}" ${appState.filter.domesticImporter === d ? "selected" : ""}>${d}</option>`
+                    )
+                    .join("")}
+                  <option value="ALL" ${appState.filter.domesticImporter === "ALL" ? "selected" : ""}>전체 수입사</option>
+                </select>
+              </label>
+              <label>
+                해외지사:
+                <select onchange="updateFilter('overseasBranch', this.value)">
+                  <option value="ALL" ${appState.filter.overseasBranch === "ALL" ? "selected" : ""}>전체 지사</option>
+                  ${appState.overseasBranches
+                    .map(
+                      (b) =>
+                        `<option value="${b}" ${appState.filter.overseasBranch === b ? "selected" : ""}>${b}</option>`
+                    )
+                    .join("")}
+                </select>
+              </label>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <label style="display:inline-flex; align-items:center; gap:5px; background:#eff6ff; border:1px solid #93c5fd; padding:5px 10px; border-radius:5px; font-weight:700; color:#1e40af; cursor:pointer;">
+                <input type="checkbox" ${appState.reportMode === "internal" ? "checked" : ""}
+                  onchange="appState.reportMode = this.checked ? 'internal' : 'external'; renderApp();" />
+                내부 검증용 상세 보기 (제품별 레시피 함유율% 표시)
+              </label>
+              <button type="button" class="btn" onclick="setToast('rust_xlsxwriter(.xlsx) 내보내기 실행: CAS번호 텍스트(@) 포맷 적용 및 한글 칼럼 폭 자동 맞춤 완료')">
+                📊 엑셀(.xlsx) 내보내기
+              </button>
+              <button type="button" class="btn btn-primary" onclick="window.print()">
+                🖨️ A4 PDF 인쇄 / 저장 (<code>@media print</code>)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formatted A4 Report Sheet (Printed directly by WebView2 @media print / PrintToPdf) -->
+        <section class="a4-sheet">
+          <div class="report-header">
+            <div>
+              <h2 class="report-title">연간 화학물질 총 수입량 산정 보고서</h2>
+              <div class="report-sub">
+                코리아 지사 수입제품 구성성분(BOM) 기반 화학물질별 환산 중량 집계표
+              </div>
+            </div>
+            <div style="text-align:right; font-size:11.5px; color:var(--text-muted);">
+              <div>보고서 유형: <strong>${
+                appState.reportMode === "external"
+                  ? "대외/수입사 제출용 (요약본)"
+                  : "코리아 지사 내부 검증용 (상세본)"
+              }</strong></div>
+              <div>산출 기준일: <span class="mono">2026-11-14</span></div>
+            </div>
+          </div>
+
+          <div class="report-meta-grid">
+            <div class="report-meta-item">
+              <strong>대상 국내 수입사</strong>
+              <span>${appState.filter.domesticImporter === "ALL" ? "전체 국내 수입사" : appState.filter.domesticImporter}</span>
+            </div>
+            <div class="report-meta-item">
+              <strong>산정 대상 연도</strong>
+              <span>${appState.filter.year === "ALL" ? "전체 기간" : `${appState.filter.year}년 (01.01 ~ 12.31)`}</span>
+            </div>
+            <div class="report-meta-item">
+              <strong>공급 해외지사</strong>
+              <span>${appState.filter.overseasBranch === "ALL" ? "전체 해외지사" : appState.filter.overseasBranch}</span>
+            </div>
+            <div class="report-meta-item">
+              <strong>대상 수입실적 / 물질 수</strong>
+              <span>수입 ${agg.matchingShipments.length}건 / 화학물질 ${agg.rows.length}종</span>
+            </div>
+          </div>
+
+          ${
+            appState.reportMode === "external"
+              ? `<div class="report-Confidential-banner" style="background:#f0fdf4; border:1px solid #86efac; color:#166534;">
+                  🔒 <strong>대외 제출용 요약 모드 (기본값):</strong> 제품별 기밀 레시피(<code>함유율 %</code>)는 출력되지 않으며, <code>CAS번호</code> 기준 연간 총 수입량(<code>kg</code> / <code>ton</code>)만 표시됩니다.
+                 </div>`
+              : `<div class="report-Confidential-banner" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
+                  ⚠️ <strong>내부 검증용 상세 모드 (대외비 · 외부 반출 금지):</strong> 각 <code>CAS번호</code> 총량 하단에 기여한 수입제품, 수입일자, 기밀 <code>함유율(%)</code> 내역이 함께 출력됩니다.
+                 </div>`
+          }
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width:48px; text-align:center;">순번</th>
+                <th style="width:140px;">CAS번호</th>
+                <th>화학물질명 (선택)</th>
+                <th class="num" style="width:155px;">연간 총 수입량 (kg)</th>
+                <th class="num" style="width:145px;">연간 총 수입량 (ton)</th>
+                <th class="no-print" style="width:95px; text-align:center;">산출 근거</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                agg.rows.length === 0
+                  ? `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 해당하는 수입실적 데이터가 없습니다.</td></tr>`
+                  : agg.rows
+                      .map((row, idx) => {
+                        const kgFormatted = DomainLogic.fromScaled(row.totalKgScaled, 2);
+                        const tonFormatted = DomainLogic.fromScaled(
+                          Math.round(row.totalKgScaled / 1000),
+                          3
+                        );
+                        const showDetail =
+                          appState.reportMode === "internal" || appState.expandedCas === row.casNo;
+
+                        return `
+                          <tr>
+                            <td style="text-align:center;" class="mono">${idx + 1}</td>
+                            <td class="mono"><strong>${row.casNo}</strong></td>
+                            <td>${
+                              row.substanceName
+                                ? row.substanceName
+                                : '<span style="color:#94a3b8;">— (미입력)</span>'
+                            }</td>
+                            <td class="num"><strong>${kgFormatted} kg</strong></td>
+                            <td class="num"><strong>${tonFormatted} ton</strong></td>
+                            <td class="no-print" style="text-align:center;">
+                              <button type="button" class="btn btn-sm" onclick="toggleCasDrilldown('${row.casNo}')">
+                                ${appState.expandedCas === row.casNo ? "접기 ▲" : `상세 (${row.breakdown.length}건) ▼`}
+                              </button>
+                            </td>
+                          </tr>
+                          ${
+                            showDetail
+                              ? `<tr>
+                                  <td colspan="6" style="background:#f8fafc; padding:8px 14px;">
+                                    <div style="font-size:11.5px; font-weight:700; color:#334155; margin-bottom:4px;">
+                                      ↳ [산출 내역] CAS번호 <code>${row.casNo}</code> 기여 수입실적 (${row.breakdown.length}건)
+                                    </div>
+                                    <table style="font-size:11.5px; background:#fff;">
+                                      <thead>
+                                        <tr>
+                                          <th>수입일자</th>
+                                          <th>해외지사</th>
+                                          <th>수입제품코드</th>
+                                          <th class="num">제품 수입량 (kg)</th>
+                                          <th class="num">함유율 (%) [대외비]</th>
+                                          <th class="num">물질 환산 중량 (kg)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        ${row.breakdown
+                                          .map(
+                                            (b) => `
+                                          <tr>
+                                            <td class="mono">${b.importDate}</td>
+                                            <td>${b.overseasBranch}</td>
+                                            <td class="mono">${b.productCode} ${b.productName ? `(${b.productName})` : ""}</td>
+                                            <td class="num">${DomainLogic.fromScaled(b.productWeightKgScaled, 2)} kg</td>
+                                            <td class="num">${Number(b.weightPct).toFixed(2)}%</td>
+                                            <td class="num"><strong>${DomainLogic.fromScaled(b.substanceKgScaled, 2)} kg</strong></td>
+                                          </tr>
+                                        `
+                                          )
+                                          .join("")}
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>`
+                              : ""
+                          }
+                        `;
+                      })
+                      .join("")
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="3" style="text-align:right;">총 화학물질 환산 수입량 합계 (수입제품 원중량 합계와 일치):</th>
+                <th class="num">${DomainLogic.fromScaled(agg.totalSubstanceKgScaled, 2)} kg</th>
+                <th class="num">${totalSubstanceTon} ton</th>
+                <th class="no-print"></th>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="margin-top:14px; display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-muted);">
+            <div>※ 환산식: 물질별 수입량(kg) = 각 수입실적의 제품 수입량(kg) × 해당 제품의 CAS번호 함유율(%) ÷ 100 (고정소수점 정밀 연산)</div>
+            <div>톤(ton) 환산 = kg ÷ 1,000 (제품 총 수입량: ${DomainLogic.fromScaled(agg.totalShipmentKgScaled, 2)} kg = ${totalShipmentTon} ton)</div>
+          </div>
+        </section>
+      `;
+    }
+
+    // =====================================================================
+    // 4. THREE RADICALLY DIFFERENT UI LAYOUT VARIANTS (UI.md)
+    // =====================================================================
+
+    // Variant A: Left Navigation Rail + Tabbed Workspace (Classic MS Access replacement feel)
+    function renderVariantA() {
+      let contentHtml = "";
+      if (appState.activeTabA === "bom") {
+        contentHtml = renderProductAndBomSection();
+      } else if (appState.activeTabA === "shipments") {
+        contentHtml = renderShipmentsSection();
+      } else if (appState.activeTabA === "excel") {
+        contentHtml = renderExcelImportSection();
+      } else {
+        contentHtml = renderAnnualQueryAndReportSection();
+      }
+
+      return `
+        <div class="layout-a">
+          <aside class="sidebar-a no-print">
+            <div class="sidebar-a-title">
+              코리아 지사 화학물질 관리<br/>
+              <span style="font-size:11px; color:#94a3b8; font-weight:400;">Variant A: 좌측 메뉴 + 탭 구조</span>
+            </div>
+            <button class="nav-btn-a ${appState.activeTabA === "bom" ? "active" : ""}"
+              onclick="appState.activeTabA='bom'; renderApp();">
+              <span>1. 수입제품 및 레시피(BOM)</span>
+              <span class="pill pill-info">${appState.products.length}</span>
+            </button>
+            <button class="nav-btn-a ${appState.activeTabA === "shipments" ? "active" : ""}"
+              onclick="appState.activeTabA='shipments'; renderApp();">
+              <span>2. 수입실적 관리</span>
+              <span class="pill pill-info">${appState.shipments.length}</span>
+            </button>
+            <button class="nav-btn-a ${appState.activeTabA === "excel" ? "active" : ""}"
+              onclick="appState.activeTabA='excel'; renderApp();">
+              <span>3. 엑셀 일괄 가져오기</span>
+              <span class="pill pill-warn">검증</span>
+            </button>
+            <button class="nav-btn-a ${appState.activeTabA === "report" ? "active" : ""}"
+              onclick="appState.activeTabA='report'; renderApp();">
+              <span>4. 연간 물질 집계 &amp; A4 보고서</span>
+              <span class="pill pill-ok">PDF</span>
+            </button>
+
+            <div style="margin-top:auto; padding:10px; background:#0f172a; border-radius:5px; font-size:11.5px; color:#94a3b8;">
+              <strong style="color:#e2e8f0; display:block; margin-bottom:4px;">DB 백업 (단일 파일)</strong>
+              SQLite WAL 모드 · <code>VACUUM INTO</code> 무중단 스냅샷 백업 지원
+              <button type="button" class="btn btn-sm" style="width:100%; margin-top:6px; justify-content:center;"
+                onclick="setToast('VACUUM INTO 실행 완료: backup_20261114.sqlite 파일이 안전하게 생성되었습니다.')">
+                💾 단일 파일 백업 생성
+              </button>
+            </div>
+          </aside>
+
+          <section class="main-a">
+            ${contentHtml}
+          </section>
+        </div>
+      `;
+    }
+
+    // Variant B: Dense 3-Pane All-in-One Workbench (Simultaneous BOM + Shipments + Live A4 Report)
+    function renderVariantB() {
+      const ep = appState.editingProduct;
+      const validation = DomainLogic.validateRecipe(ep.components);
+
+      return `
+        <div class="layout-b">
+          <div class="command-bar-b no-print">
+            <div>
+              <strong>Variant B: 3-패널 올인원 워크벤치</strong>
+              <span style="color:var(--text-muted); margin-left:8px;">
+                좌측에서 레시피(100% 검증)나 중앙에서 수입실적을 수정하면 <strong>우측 연간 화학물질 총 수입량 &amp; A4 보고서</strong>가 즉시 갱신됩니다.
+              </span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-sm" onclick="commitExcelPreview()">📥 샘플 엑셀 일괄 반영 실행</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">🖨️ 우측 A4 보고서 즉시 인쇄</button>
+            </div>
+          </div>
+
+          <div class="workbench-b">
+            <!-- Pane 1: Compact Product & BOM Editor -->
+            <div class="card print-hide-pane">
+              <div class="card-title">
+                <span>① 수입제품 &amp; 레시피 (100% 검증)</span>
+                <select onchange="selectProductForEdit(this.value)">
+                  ${appState.products
+                    .map(
+                      (p) =>
+                        `<option value="${p.productCode}" ${p.productCode === appState.selectedProductCode ? "selected" : ""}>${p.productCode} (${p.productName})</option>`
+                    )
+                    .join("")}
+                </select>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>CAS번호</th>
+                    <th>물질명(선택)</th>
+                    <th class="num">함유율(%)</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${ep.components
+                    .map(
+                      (c, idx) => `
+                    <tr>
+                      <td><input type="text" class="mono" style="width:92px;" value="${c.casNo}" onchange="updateComponentField(${idx}, 'casNo', this.value)" /></td>
+                      <td><input type="text" style="width:105px;" value="${c.substanceName || ""}" onchange="updateComponentField(${idx}, 'substanceName', this.value)" /></td>
+                      <td class="num"><input type="number" step="0.01" style="width:72px; text-align:right;" value="${c.weightPct}" onchange="updateComponentField(${idx}, 'weightPct', this.value)" /></td>
+                      <td><button class="btn btn-danger btn-sm" onclick="removeComponentRow(${idx})">×</button></td>
+                    </tr>
+                  `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+              <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span class="pill ${validation.valid ? "pill-ok" : "pill-err"}">합계: ${validation.totalPctFormatted}%</span>
+                <div style="display:flex; gap:4px;">
+                  <button class="btn btn-sm" onclick="addComponentRow()">+ 행</button>
+                  <button class="btn btn-primary btn-sm" onclick="saveEditingRecipe()">저장</button>
+                </div>
+              </div>
+              ${
+                !validation.valid
+                  ? `<div style="margin-top:6px; font-size:11.5px; color:var(--danger); font-weight:600;">⚠️ ${validation.error}</div>`
+                  : ""
+              }
+            </div>
+
+            <!-- Pane 2: Compact Shipments List & Quick Entry -->
+            <div class="card print-hide-pane">
+              <div class="card-title">
+                <span>② 수입실적 (${appState.shipments.length}건)</span>
+              </div>
+              <form onsubmit="handleAddShipment(event)" style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; background:var(--surface-alt); padding:8px; border-radius:4px;">
+                <input type="date" name="importDate" value="2026-10-05" required />
+                <select name="domesticImporter">
+                  ${appState.domesticImporters.map((d) => `<option value="${d}">${d}</option>`).join("")}
+                </select>
+                <select name="productCode">
+                  ${appState.products.map((p) => `<option value="${p.productCode}">${p.productCode}</option>`).join("")}
+                </select>
+                <div style="display:flex; gap:4px;">
+                  <input type="number" step="0.01" name="weightKg" value="1000" style="width:100%;" placeholder="kg" required />
+                  <button type="submit" class="btn btn-primary btn-sm">추가</button>
+                </div>
+              </form>
+              <div style="max-height:390px; overflow:auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>일자</th>
+                      <th>수입사</th>
+                      <th>제품</th>
+                      <th class="num">kg</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${appState.shipments
+                      .map(
+                        (s) => `
+                      <tr>
+                        <td class="mono" style="font-size:11.5px;">${s.importDate}</td>
+                        <td style="font-size:11.5px;">${s.domesticImporter}</td>
+                        <td class="mono" style="font-size:11.5px;">${s.productCode}</td>
+                        <td class="num" style="font-size:11.5px;">${s.weightKg.toLocaleString()}</td>
+                      </tr>
+                    `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pane 3: Live Annual Substance Total & A4 Report Preview -->
+            <div>
+              ${renderAnnualQueryAndReportSection(true)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Variant C: 4-Step Guided Wizard Stepper Workflow
+    function renderVariantC() {
+      let stepBody = "";
+      if (appState.activeStepC === 1) {
+        stepBody = renderProductAndBomSection();
+      } else if (appState.activeStepC === 2) {
+        stepBody = renderExcelImportSection();
+      } else if (appState.activeStepC === 3) {
+        stepBody = renderShipmentsSection();
+      } else {
+        stepBody = renderAnnualQueryAndReportSection();
+      }
+
+      return `
+        <div class="layout-c">
+          <div class="stepper-c no-print">
+            <button class="step-btn-c ${appState.activeStepC === 1 ? "active" : ""}" onclick="appState.activeStepC = 1; renderApp();">
+              <span class="step-num-c">STEP 1</span>
+              <span class="step-title-c">수입제품 및 레시피(BOM) 100% 등록</span>
+            </button>
+            <button class="step-btn-c ${appState.activeStepC === 2 ? "active" : ""}" onclick="appState.activeStepC = 2; renderApp();">
+              <span class="step-num-c">STEP 2</span>
+              <span class="step-title-c">엑셀 일괄 가져오기 &amp; 검증 미리보기</span>
+            </button>
+            <button class="step-btn-c ${appState.activeStepC === 3 ? "active" : ""}" onclick="appState.activeStepC = 3; renderApp();">
+              <span class="step-num-c">STEP 3</span>
+              <span class="step-title-c">수입실적 입력 및 이력 확인</span>
+            </button>
+            <button class="step-btn-c ${appState.activeStepC === 4 ? "active" : ""}" onclick="appState.activeStepC = 4; renderApp();">
+              <span class="step-num-c">STEP 4</span>
+              <span class="step-title-c">연간 화학물질 집계 &amp; A4 PDF 보고서</span>
+            </button>
+          </div>
+
+          <div>
+            ${stepBody}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderApp() {
+      const root = document.getElementById("app-root");
+      const v = VARIANTS[appState.variant] || VARIANTS.A;
+      const labelEl = document.getElementById("switcher-label");
+      if (labelEl) {
+        labelEl.textContent = `Variant ${v.key} — ${v.name}`;
+      }
+
+      if (v.key === "A") {
+        root.innerHTML = renderVariantA();
+      } else if (v.key === "B") {
+        root.innerHTML = renderVariantB();
+      } else {
+        root.innerHTML = renderVariantC();
+      }
+    }
+
+    renderApp();
+  </script>
+</body>
+</html>

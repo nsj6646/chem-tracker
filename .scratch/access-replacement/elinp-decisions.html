@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>한눈에 보는 결정 사항 (ELINP)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 40px 20px 80px;
+      line-height: 1.45;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--blue-bg);
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 15px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 20px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      padding: 36px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--blue);
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .visual-box {
+      background: #f1f5f9;
+      border-radius: 22px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .caption {
+      font-size: 21px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text);
+    }
+    .caption span {
+      color: var(--blue);
+    }
+    .caption small {
+      display: block;
+      margin-top: 6px;
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    svg {
+      width: 100%;
+      max-width: 820px;
+      height: auto;
+      overflow: visible;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">비전공자를 위한 그림 설명서 (ELINP)</div>
+      <h1>우리가 합의한 새 프로그램 설계도</h1>
+      <p>복잡한 기술 용어 없이 그림 5장으로 보는 핵심 결정 사항</p>
+    </header>
+
+    <div class="grid">
+
+      <!-- CARD 1 -->
+      <section class="card">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <h2 class="step-title">무거운 엑세스(Access) 대신 ‘깃털처럼 가벼운 전용 앱’</h2>
+        </div>
+        <div class="visual-box">
+          <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
+            <!-- Left: Old Access -->
+            <rect x="20" y="25" width="310" height="180" rx="20" fill="#fef2f2" stroke="#fca5a5" stroke-width="3"/>
+            <text x="175" y="75" font-size="44" text-anchor="middle">🐢</text>
+            <text x="175" y="118" font-size="22" font-weight="800" fill="#991b1b" text-anchor="middle">기존 MS Access</text>
+            <text x="175" y="150" font-size="16" font-weight="600" fill="#b91c1c" text-anchor="middle">무거운 오피스 설치 필수</text>
+            <text x="175" y="176" font-size="16" font-weight="600" fill="#b91c1c" text-anchor="middle">저사양 PC에서 느리고 답답함</text>
+
+            <!-- Arrow -->
+            <path d="M 355 115 L 435 115" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="430,100 455,115 430,130" fill="#2563eb"/>
+
+            <!-- Right: New App -->
+            <rect x="470" y="25" width="310" height="180" rx="20" fill="#f0fdf4" stroke="#86efac" stroke-width="3"/>
+            <text x="625" y="75" font-size="44" text-anchor="middle">🚀</text>
+            <text x="625" y="118" font-size="22" font-weight="800" fill="#166534" text-anchor="middle">새 전용 프로그램</text>
+            <text x="625" y="150" font-size="16" font-weight="700" fill="#15803d" text-anchor="middle">윈도우 11 기본 부품 재활용 (5MB)</text>
+            <text x="625" y="176" font-size="16" font-weight="700" fill="#15803d" text-anchor="middle">클릭 즉시 0.5초 만에 실행!</text>
+          </svg>
+        </div>
+        <p class="caption">
+          오래된 윈도우 11 PC에서도 <span>느려지지 않는 것(성능)</span>이 1순위입니다.
+          <small>따로 무거운 프로그램을 깔지 않아도 설치 파일 하나로 바로 켜집니다.</small>
+        </p>
+      </section>
+
+      <!-- CARD 2 -->
+      <section class="card">
+        <div class="step-header">
+          <div class="step-num">2</div>
+          <h2 class="step-title">4만 7천 개짜리 외부 사전은 빼고, ‘내 데이터’만 가볍게!</h2>
+        </div>
+        <div class="visual-box">
+          <svg viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg">
+            <!-- Left: Giant Book -->
+            <rect x="20" y="20" width="340" height="200" rx="20" fill="#fff1f2" stroke="#fda4af" stroke-width="3" stroke-dasharray="8 6"/>
+            <text x="190" y="72" font-size="42" text-anchor="middle">📚❌</text>
+            <text x="190" y="115" font-size="21" font-weight="800" fill="#be123c" text-anchor="middle">정부 엑셀 사전 (47,531줄)</text>
+            <text x="190" y="148" font-size="16" font-weight="600" fill="#9f1239" text-anchor="middle">앱 안에 넣지 않음 · 불러오지도 않음</text>
+            <text x="190" y="176" font-size="15" font-weight="600" fill="#e11d48" text-anchor="middle">(고객이 사이트에서 직접 보는 참고용)</text>
+
+            <!-- Right: Clean Notebook -->
+            <rect x="410" y="20" width="370" height="200" rx="20" fill="#eff6ff" stroke="#93c5fd" stroke-width="3"/>
+            <text x="595" y="72" font-size="42" text-anchor="middle">📓✨</text>
+            <text x="595" y="115" font-size="21" font-weight="800" fill="#1d4ed8" text-anchor="middle">고객이 직접 관리하는 장부만!</text>
+            <text x="595" y="148" font-size="17" font-weight="700" fill="#1e40af" text-anchor="middle">우리에겐 [CAS번호 + 물질명]만 있으면 충분</text>
+            <text x="595" y="176" font-size="16" font-weight="600" fill="#2563eb" text-anchor="middle">외부 파일에 휘둘리지 않고 속도는 10배 쾌적!</text>
+          </svg>
+        </div>
+        <p class="caption">
+          외부 마스터 엑셀에 의존하지 않고 <span>고객이 직접 관리하던 데이터</span>만 다룹니다.
+          <small>쓸데없이 앱을 무겁게 만드는 기능은 과감히 덜어냈습니다.</small>
+        </p>
+      </section>
+
+      <!-- CARD 3 -->
+      <section class="card">
+        <div class="step-header">
+          <div class="step-num">3</div>
+          <h2 class="step-title">대외비 레시피는 개발자도 못 보게 ‘고객이 직접 엑셀로!’</h2>
+        </div>
+        <div class="visual-box">
+          <svg viewBox="0 0 800 250" xmlns="http://www.w3.org/2000/svg">
+            <!-- Developer blocked -->
+            <rect x="20" y="30" width="210" height="190" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+            <text x="125" y="85" font-size="42" text-anchor="middle">🧑‍💻🚫</text>
+            <text x="125" y="128" font-size="19" font-weight="800" fill="#334155" text-anchor="middle">개발자에게</text>
+            <text x="125" y="154" font-size="19" font-weight="800" fill="#dc2626" text-anchor="middle">데이터 전달 없음</text>
+            <text x="125" y="182" font-size="14" font-weight="600" fill="#64748b" text-anchor="middle">(1급 영업비밀 보호)</text>
+
+            <!-- Customer Self Import -->
+            <rect x="260" y="30" width="250" height="190" rx="18" fill="#eff6ff" stroke="#60a5fa" stroke-width="3"/>
+            <text x="385" y="85" font-size="42" text-anchor="middle">📥📊</text>
+            <text x="385" y="128" font-size="20" font-weight="800" fill="#1e3a8a" text-anchor="middle">내 PC에서 엑셀 넣기</text>
+            <text x="385" y="156" font-size="16" font-weight="600" fill="#1d4ed8" text-anchor="middle">엑세스 → 엑셀 양식 붙여넣기</text>
+            <text x="385" y="182" font-size="16" font-weight="600" fill="#1d4ed8" text-anchor="middle">→ 앱에 드래그하면 이관 끝!</text>
+
+            <!-- Guardrails -->
+            <rect x="540" y="30" width="240" height="190" rx="18" fill="#fefce8" stroke="#fde047" stroke-width="3"/>
+            <text x="660" y="75" font-size="36" text-anchor="middle">🛡️ 똑똑한 문지기</text>
+            <rect x="560" y="95" width="200" height="48" rx="10" fill="#dcfce7"/>
+            <text x="660" y="125" font-size="17" font-weight="800" fill="#166534" text-anchor="middle">성분 합계 = 무조건 100%</text>
+            <rect x="560" y="153" width="200" height="48" rx="10" fill="#e0e7ff"/>
+            <text x="660" y="183" font-size="16" font-weight="800" fill="#3730a3" text-anchor="middle">중복 수입내역 자동 패스</text>
+          </svg>
+        </div>
+        <p class="caption">
+          제품 구성성분(레시피) 합계가 <span>정확히 100%</span>일 때만 통과시킵니다.
+          <small>같은 엑셀 파일을 실수로 두 번 넣어도 중복 수입내역은 알아서 걸러냅니다.</small>
+        </p>
+      </section>
+
+      <!-- CARD 4 -->
+      <section class="card">
+        <div class="step-header">
+          <div class="step-num">4</div>
+          <h2 class="step-title">제품 수입량만 넣으면 ‘연간 화학물질 총량’ 자동 계산</h2>
+        </div>
+        <div class="visual-box">
+          <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
+            <!-- Box 1: Shipment -->
+            <rect x="15" y="30" width="225" height="170" rx="18" fill="#ffffff" stroke="#94a3b8" stroke-width="3"/>
+            <text x="127" y="72" font-size="34" text-anchor="middle">🚢 수입실적</text>
+            <text x="127" y="112" font-size="19" font-weight="800" fill="#0f172a" text-anchor="middle">제품 A : 1,000 kg</text>
+            <text x="127" y="142" font-size="15" font-weight="600" fill="#475569" text-anchor="middle">(국내 수입사 · 수입일자)</text>
+
+            <!-- Multiply sign -->
+            <text x="262" y="125" font-size="36" font-weight="900" fill="#2563eb" text-anchor="middle">×</text>
+
+            <!-- Box 2: Recipe -->
+            <rect x="285" y="30" width="225" height="170" rx="18" fill="#ffffff" stroke="#94a3b8" stroke-width="3"/>
+            <text x="397" y="72" font-size="34" text-anchor="middle">🧪 비밀 레시피</text>
+            <text x="397" y="112" font-size="18" font-weight="800" fill="#1d4ed8" text-anchor="middle">CAS-111 : 70%</text>
+            <text x="397" y="142" font-size="18" font-weight="800" fill="#1d4ed8" text-anchor="middle">CAS-222 : 30%</text>
+            <text x="397" y="172" font-size="14" font-weight="700" fill="#16a34a" text-anchor="middle">(합계 100%)</text>
+
+            <!-- Equals sign -->
+            <text x="532" y="125" font-size="36" font-weight="900" fill="#16a34a" text-anchor="middle">=</text>
+
+            <!-- Box 3: Annual Total -->
+            <rect x="555" y="30" width="230" height="170" rx="18" fill="#f0fdf4" stroke="#4ade80" stroke-width="3"/>
+            <text x="670" y="72" font-size="30" text-anchor="middle">📊 연간 물질 총합</text>
+            <text x="670" y="112" font-size="18" font-weight="800" fill="#166534" text-anchor="middle">CAS-111 : 700 kg (0.7 ton)</text>
+            <text x="670" y="142" font-size="18" font-weight="800" fill="#166534" text-anchor="middle">CAS-222 : 300 kg (0.3 ton)</text>
+            <text x="670" y="172" font-size="14" font-weight="700" fill="#15803d" text-anchor="middle">소수점 오차 0% 정밀 합산!</text>
+          </svg>
+        </div>
+        <p class="caption">
+          수입사별·연도별로 어떤 화학물질(`CAS번호`)이 총 몇 <span>kg / ton</span> 들어왔는지 즉시 합산합니다.
+          <small>컴퓨터 소수점 계산 오차가 절대 생기지 않는 금융권 방식 계산기를 씁니다.</small>
+        </p>
+      </section>
+
+      <!-- CARD 5 -->
+      <section class="card">
+        <div class="step-header">
+          <div class="step-num">5</div>
+          <h2 class="step-title">비밀은 가려주는 ‘A4 PDF 보고서’ & 깨지지 않는 ‘엑셀’</h2>
+        </div>
+        <div class="visual-box">
+          <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
+            <!-- PDF Report -->
+            <rect x="20" y="25" width="360" height="180" rx="20" fill="#eff6ff" stroke="#93c5fd" stroke-width="3"/>
+            <text x="200" y="75" font-size="40" text-anchor="middle">🖨️ 📄</text>
+            <text x="200" y="115" font-size="21" font-weight="800" fill="#1e3a8a" text-anchor="middle">깔끔한 A4 PDF 보고서</text>
+            <text x="200" y="148" font-size="16" font-weight="700" fill="#1d4ed8" text-anchor="middle">대외비 레시피(%)는 자동으로 숨김!</text>
+            <text x="200" y="174" font-size="15" font-weight="600" fill="#3b82f6" text-anchor="middle">(연간 총 수입량 kg/ton만 안전하게 출력)</text>
+
+            <!-- Excel & Backup -->
+            <rect x="420" y="25" width="360" height="180" rx="20" fill="#f0fdf4" stroke="#86efac" stroke-width="3"/>
+            <text x="600" y="75" font-size="40" text-anchor="middle">📗 💾</text>
+            <text x="600" y="115" font-size="21" font-weight="800" fill="#166534" text-anchor="middle">엑셀 저장 & 1초 파일 백업</text>
+            <text x="600" y="148" font-size="16" font-weight="700" fill="#15803d" text-anchor="middle">CAS번호(50-00-0)가 날짜로 안 깨짐!</text>
+            <text x="600" y="174" font-size="15" font-weight="600" fill="#16a34a" text-anchor="middle">버튼 하나로 금고 파일 통째 복사 백업</text>
+          </svg>
+        </div>
+        <p class="caption">
+          수입사에 전달할 땐 <span>레시피(%) 없이 총량만 적힌 PDF</span>로 안전하게 뽑아줍니다.
+          <small>내부 확인이 필요할 때만 체크박스를 켜서 제품별 상세 내역을 볼 수 있습니다.</small>
+        </p>
+      </section>
+
+    </div>
+  </div>
+</body>
+</html>
