@@ -22,3 +22,9 @@ We will build the Korea branch Chemical Import Volume Tracker as a single-window
 - All filtering and fixed-point `연간 화학물질 총 수입량` aggregations execute in Rust/SQLite over the customer's directly managed database (without bundling or loading the 47,531-row external NCIS master Excel file), keeping startup, query latency, and RAM footprint minimal on low-spec Windows 11 hardware.
 - Because customer `제품 구성성분(BOM)` recipes and shipment history are confidential (`대외비`), the app embeds a pure-Rust self-service importer (`calamine` + `csv`) with downloadable `.xlsx` templates and preview/validation rather than bundling C `mdbtools` DLLs or a JVM runtime.
 - Primary packaging runs locally on macOS via `cargo tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis` (producing a standalone `*-setup.exe` and portable `.exe`), backed by a GitHub Actions `windows-latest` workflow for native MSVC verification.
+
+## Amendments (Implemented Baseline, 2026-11-14)
+
+- **Plain CSS & Custom Virtual Window**: The shipped UI uses plain CSS (`src/index.css`) and a pure fixed-height virtual window (`computeVirtualWindow` in `src/workspaces/shipmentsLogic.ts`) instead of `tailwindcss`, `@tanstack/react-table`, and `@tanstack/react-virtual`; those unused packages were removed from `package.json`.
+- **Local Workspace Crates (`crates/`)**: `src-tauri/Cargo.toml` resolves `rust_decimal`, `rust_xlsxwriter`, `unicode_width`, and `csv` to minimal in-repo workspace crates under `crates/` rather than upstream crates.io releases to keep builds self-contained and lightweight. Note that `crates/rust_xlsxwriter` buffers cells in memory (`BTreeMap`) rather than upstream `constant_memory` streaming.
+- **Workspace Cargo Target Path**: Because the root `Cargo.toml` is a `[workspace]`, cross-build and CI bundle outputs live under `target/x86_64-pc-windows-msvc/...` rather than `src-tauri/target/...`.

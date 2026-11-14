@@ -1,6 +1,7 @@
 # Wayfinder Map: Lightweight Windows 11 Access Replacement
 
 Label: `wayfinder:map`
+Status: **Archived** (MVP implemented and merged to `main`; use GitHub Issues via `docs/agents/issue-tracker.md` for all new work)
 
 ## Destination
 

@@ -2,7 +2,9 @@
 
 ### Issue tracker
 
-Issues and specs live as GitHub issues in `nsj6646/chem-tracker` (via `gh` CLI). See `docs/agents/issue-tracker.md`.
+Issues and specs for new work live as GitHub issues in `nsj6646/chem-tracker` (via `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+`.scratch/access-replacement/` (`map.md`, `spec.md`, `tickets/01..07.md`) is an **archived** MVP design/ticket history (all tickets resolved on `main`); do not treat it as an active tracker or pass bare numbers to `/implement` expecting GitHub or handoff items.
 
 ### Triage labels
 
