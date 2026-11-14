@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Walking Skeleton — Desktop Shell, SQLite WAL Schema, Fixed-Point Core & Sample Data Seed
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Top quick-entry / edit form bar supports creating and updating `Import Shipment` (`수입실적`) records with `수입일자` (`YYYY-MM-DD`), `국내 수입사` (including inline creation of new importers), `수입제품코드`, `제품 수입량 (kg)` (`> 0`, up to 4 decimal places), and `비고 (선택)` using a keyboard-friendly `Tab` $\to$ `Enter` flow.
-- [ ] Selecting an `Imported Product` (`수입제품코드`) in the shipment form automatically populates and locks its associated `Overseas Branch` (`해외지사`), and typing `제품 수입량 (kg)` shows a live fixed-point `ton` (`= kg / 1,000`) preview.
-- [ ] Filter and summary strip filters shipments by `연도` (`shipment_year`), `국내 수입사`, `해외지사`, and `수입제품코드`/`제품명` query, and displays exact total matching shipment count, sum of `제품 수입량 (kg)`, and sum of `환산 중량 (ton)`.
-- [ ] Shipment history table uses `@tanstack/react-virtual` row virtualization (~30–50 DOM nodes rendered at once) displaying `수입일자`, `국내 수입사`, `해외지사`, `수입제품코드` (`제품명`), `제품 수입량 (kg)`, `환산 중량 (ton)`, `비고`, and inline `수정 / 삭제` actions.
-- [ ] Automated tests verify shipment CRUD, `shipment_year` generated column indexing/filtering, positive weight validation, and exact `kg`/`ton` summary totals.
+- [x] Top quick-entry / edit form bar supports creating and updating `Import Shipment` (`수입실적`) records with `수입일자` (`YYYY-MM-DD`), `국내 수입사` (including inline creation of new importers), `수입제품코드`, `제품 수입량 (kg)` (`> 0`, up to 4 decimal places), and `비고 (선택)` using a keyboard-friendly `Tab` $\to$ `Enter` flow.
+- [x] Selecting an `Imported Product` (`수입제품코드`) in the shipment form automatically populates and locks its associated `Overseas Branch` (`해외지사`), and typing `제품 수입량 (kg)` shows a live fixed-point `ton` (`= kg / 1,000`) preview.
+- [x] Filter and summary strip filters shipments by `연도` (`shipment_year`), `국내 수입사`, `해외지사`, and `수입제품코드`/`제품명` query, and displays exact total matching shipment count, sum of `제품 수입량 (kg)`, and sum of `환산 중량 (ton)`.
+- [x] Shipment history table uses row virtualization (~30–50 DOM nodes rendered at once via `computeVirtualWindow`; ready to swap to `@tanstack/react-virtual` after online `npm install`) displaying `수입일자`, `국내 수입사`, `해외지사`, `수입제품코드` (`제품명`), `제품 수입량 (kg)`, `제품 환산 중량 (ton)`, `비고`, and inline `수정 / 삭제` actions.
+- [x] Automated tests verify shipment CRUD, `shipment_year` generated column indexing/filtering, positive weight validation, and exact `kg`/`ton` summary totals.

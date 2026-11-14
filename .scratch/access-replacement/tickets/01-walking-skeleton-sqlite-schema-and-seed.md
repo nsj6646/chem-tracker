@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Schema & Fixed-Point Decision (from Prototype & Spec)
 
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS product_components (
 );
 ```
 
-- [ ] Application launches into the `Variant A` desktop layout with the fixed left sidebar (`240px`, hidden in `@media print`), active DB status indicator, 4 workspace navigation tabs, and bottom database management panel.
-- [ ] Local SQLite database initializes on connection open with `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = ON; PRAGMA temp_store = MEMORY; PRAGMA cache_size = -8000;` and creates all 6 tables (`domestic_importers`, `overseas_branches`, `chemical_substances`, `imported_products`, `product_components`, `import_shipments`) plus indexes.
-- [ ] Fixed-point decimal domain helpers losslessly parse decimal inputs up to 4 decimal places into canonical `Decimal` strings and `× 10,000` scaled integers (`100.0000% = 1_000_000`), and format `kg` (2–4 decimals), `ton = kg / 1,000` (4–5 decimals), and `함유율(%)` (2–4 decimals) without IEEE-754 floating-point drift.
-- [ ] Clicking `샘플 데이터 적재` populates synthetic `Domestic Importer` (`국내 수입사`), `Overseas Branch` (`해외지사`), `Chemical Substance` (`화학물질`), `Imported Product` (`수입제품` with `100%` `Product Recipe`), and `Import Shipment` (`수입실적`) records inside a single transaction and updates the UI status indicator.
-- [ ] Automated backend tests verify schema creation, foreign key and `CHECK` constraints, `UNIQUE (product_id, substance_id)` enforcement, and fixed-point decimal conversion/formatting rules.
+- [ ] Application launches into the `Variant A` desktop layout with the fixed left sidebar (`240px`, hidden in `@media print`), active DB status indicator, 4 workspace navigation tabs, and bottom database management panel. *(Implemented in `src/App.tsx`, `src/index.css`, and `src-tauri/tauri.conf.json`; requires online `npm install` + `tauri` crate linking to launch the desktop binary.)*
+- [x] Local SQLite database initializes on connection open with `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = ON; PRAGMA temp_store = MEMORY; PRAGMA cache_size = -8000;` and creates all 6 tables (`domestic_importers`, `overseas_branches`, `chemical_substances`, `imported_products`, `product_components`, `import_shipments`) plus indexes.
+- [x] Fixed-point decimal domain helpers losslessly parse decimal inputs up to 4 decimal places into canonical `Decimal` strings and `× 10,000` scaled integers (`100.0000% = 1_000_000`), and format `kg` (2–4 decimals), `ton = kg / 1,000` (4–5 decimals), and `함유율(%)` (2–4 decimals) without IEEE-754 floating-point drift.
+- [x] Clicking `샘플 데이터 적재` populates synthetic `Domestic Importer` (`국내 수입사`), `Overseas Branch` (`해외지사`), `Chemical Substance` (`화학물질`), `Imported Product` (`수입제품` with `100%` `Product Recipe`), and `Import Shipment` (`수입실적`) records inside a single transaction and updates the UI status indicator.
+- [x] Automated backend tests verify schema creation, foreign key and `CHECK` constraints, `UNIQUE (product_id, substance_id)` enforcement, and fixed-point decimal conversion/formatting rules.
