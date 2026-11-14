@@ -1,4 +1,9 @@
-import type { DbStatus } from "../lib/ipc";
+import {
+  DB_RESTORED_EVENT,
+  type DbStatus,
+  type TauriInvoke,
+  detectTauriInvoke,
+} from "../lib/ipc";
 
 export interface BackupResultPayload {
   target_path: string;
@@ -33,8 +38,6 @@ export type BackupAction =
   | { type: "RESTORE_STARTED" }
   | { type: "RESTORE_SUCCEEDED"; result: RestoreResultPayload }
   | { type: "RESTORE_FAILED"; message: string };
-
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
 export function formatDefaultBackupFilename(date: Date = new Date()): string {
   const year = String(date.getFullYear()).padStart(4, "0");
@@ -112,15 +115,6 @@ function formatByteSize(bytes: number): string {
     return `${kb.toFixed(1)} KB`;
   }
   return `${(kb / 1024).toFixed(2)} MB`;
-}
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
 }
 
 export function createBackupIpcAdapter(invokeOverride?: TauriInvoke): BackupIpcAdapter {
@@ -254,7 +248,7 @@ export async function executeBackupRestore(
     callbacks?.onRestored?.(result.status);
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(
-        new CustomEvent("chem-tracker:db-restored", { detail: result.status }),
+        new CustomEvent(DB_RESTORED_EVENT, { detail: result.status }),
       );
     }
     return true;

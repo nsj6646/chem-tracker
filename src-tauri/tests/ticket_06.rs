@@ -3,7 +3,7 @@ use chem_tracker::db::{open_connection, seed_sample_data};
 use chem_tracker::decimal::parse_decimal_4dp;
 use chem_tracker::reports::{
     export_annual_report_xlsx, get_report_filter_options, query_annual_substance_totals,
-    AnnualReportFilter, ReportMode,
+    AnnualReportFilter, ReportMode, ReportPeriodMode,
 };
 use rust_decimal::Decimal;
 use std::path::PathBuf;
@@ -70,6 +70,7 @@ fn slice1_annual_substance_totals_filters_and_exact_decimal_math() {
     let report = query_annual_substance_totals(
         &conn,
         &AnnualReportFilter {
+            period_mode: ReportPeriodMode::Year,
             target_year: Some(2026),
             start_date: None,
             end_date: None,
@@ -122,6 +123,7 @@ fn slice1_annual_substance_totals_filters_and_exact_decimal_math() {
     let custom_report = query_annual_substance_totals(
         &conn,
         &AnnualReportFilter {
+            period_mode: ReportPeriodMode::CustomRange,
             target_year: None,
             start_date: Some("2026-01-01".to_string()),
             end_date: Some("2026-03-31".to_string()),
@@ -189,6 +191,7 @@ fn slice1_annual_substance_totals_filters_and_exact_decimal_math() {
     let tiny_report = query_annual_substance_totals(
         &conn,
         &AnnualReportFilter {
+            period_mode: ReportPeriodMode::Year,
             target_year: Some(2026),
             start_date: None,
             end_date: None,
@@ -211,6 +214,7 @@ fn slice1_annual_substance_totals_filters_and_exact_decimal_math() {
     let bad_range = query_annual_substance_totals(
         &conn,
         &AnnualReportFilter {
+            period_mode: ReportPeriodMode::CustomRange,
             target_year: None,
             start_date: Some("2026-12-31".to_string()),
             end_date: Some("2026-01-01".to_string()),
@@ -284,6 +288,7 @@ fn slice2_xlsx_export_external_summary_and_internal_detail_modes() {
     .unwrap();
 
     let filter = AnnualReportFilter {
+        period_mode: ReportPeriodMode::Year,
         target_year: Some(2026),
         start_date: None,
         end_date: None,

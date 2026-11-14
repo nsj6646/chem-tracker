@@ -2,6 +2,7 @@
 //! Implemented in Ticket 06.
 
 use crate::decimal::{compute_substance_weight_kg, format_kg, format_percentage, format_ton};
+use crate::domain::validate_calendar_date;
 use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension};
 use rust_decimal::{Decimal, RoundingStrategy};
@@ -20,14 +21,32 @@ pub enum ReportMode {
     InternalDetail,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ReportPeriodMode {
+    /// Filter shipments by `target_year` (`YYYY` calendar year, or all years if `None`).
+    #[default]
+    Year,
+    /// Filter shipments by optional `start_date`..=`end_date` (never falls back to `target_year`).
+    CustomRange,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AnnualReportFilter {
+    pub period_mode: ReportPeriodMode,
     pub target_year: Option<i32>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub domestic_importer_id: Option<i64>,
     pub overseas_branch_id: Option<i64>,
     pub product_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReportExportResult {
+    pub saved_path: String,
+    pub sheet_count: usize,
+    pub message: String,
+    pub report: AnnualSubstanceReport,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -165,11 +184,13 @@ pub fn query_annual_substance_totals(
     filter: &AnnualReportFilter,
 ) -> AppResult<AnnualSubstanceReport> {
     let normalized = normalize_filter(filter)?;
-    let (start_date, end_date, effective_year) = match (&normalized.start_date, &normalized.end_date) {
-        (Some(s), Some(e)) => (Some(s.as_str()), Some(e.as_str()), None),
-        (Some(s), None) => (Some(s.as_str()), None, None),
-        (None, Some(e)) => (None, Some(e.as_str()), None),
-        (None, None) => (None, None, normalized.target_year),
+    let (start_date, end_date, effective_year) = match normalized.period_mode {
+        ReportPeriodMode::Year => (None, None, normalized.target_year),
+        ReportPeriodMode::CustomRange => (
+            normalized.start_date.as_deref(),
+            normalized.end_date.as_deref(),
+            None,
+        ),
     };
 
     let period_label = build_period_label(effective_year, start_date, end_date);
@@ -358,69 +379,56 @@ pub fn query_annual_substance_totals(
 }
 
 fn normalize_filter(filter: &AnnualReportFilter) -> AppResult<AnnualReportFilter> {
-    let start_date = clean_optional_date(filter.start_date.as_deref(), "시작일")?;
-    let end_date = clean_optional_date(filter.end_date.as_deref(), "종료일")?;
+    match filter.period_mode {
+        ReportPeriodMode::Year => Ok(AnnualReportFilter {
+            period_mode: ReportPeriodMode::Year,
+            target_year: filter.target_year,
+            start_date: None,
+            end_date: None,
+            domestic_importer_id: filter.domestic_importer_id,
+            overseas_branch_id: filter.overseas_branch_id,
+            product_id: filter.product_id,
+        }),
+        ReportPeriodMode::CustomRange => {
+            let start_date = clean_optional_date(filter.start_date.as_deref(), "시작일")?;
+            let end_date = clean_optional_date(filter.end_date.as_deref(), "종료일")?;
 
-    if let (Some(s), Some(e)) = (&start_date, &end_date) {
-        if s > e {
-            return Err(AppError::Validation(
-                "조회 시작일은 종료일보다 늦을 수 없습니다.".to_string(),
-            ));
+            if let (Some(s), Some(e)) = (&start_date, &end_date) {
+                if s > e {
+                    return Err(AppError::Validation(
+                        "조회 시작일은 종료일보다 늦을 수 없습니다.".to_string(),
+                    ));
+                }
+            }
+
+            Ok(AnnualReportFilter {
+                period_mode: ReportPeriodMode::CustomRange,
+                target_year: None,
+                start_date,
+                end_date,
+                domestic_importer_id: filter.domestic_importer_id,
+                overseas_branch_id: filter.overseas_branch_id,
+                product_id: filter.product_id,
+            })
         }
     }
-
-    Ok(AnnualReportFilter {
-        target_year: filter.target_year,
-        start_date,
-        end_date,
-        domestic_importer_id: filter.domestic_importer_id,
-        overseas_branch_id: filter.overseas_branch_id,
-        product_id: filter.product_id,
-    })
 }
 
 fn clean_optional_date(raw: Option<&str>, field_label: &str) -> AppResult<Option<String>> {
     let Some(val) = raw.map(str::trim).filter(|s| !s.is_empty()) else {
         return Ok(None);
     };
-    if !is_valid_iso_date(val) {
+    let (year, month, day) = validate_calendar_date(val).map_err(|_| {
+        AppError::Validation(format!(
+            "{field_label}은 YYYY-MM-DD 형식이어야 합니다: '{val}'"
+        ))
+    })?;
+    if !(1900..=2999).contains(&year) {
         return Err(AppError::Validation(format!(
             "{field_label}은 YYYY-MM-DD 형식이어야 합니다: '{val}'"
         )));
     }
-    Ok(Some(val.to_string()))
-}
-
-fn is_valid_iso_date(s: &str) -> bool {
-    let bytes = s.as_bytes();
-    if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' {
-        return false;
-    }
-    let Ok(year) = s[0..4].parse::<u32>() else {
-        return false;
-    };
-    let Ok(month) = s[5..7].parse::<u32>() else {
-        return false;
-    };
-    let Ok(day) = s[8..10].parse::<u32>() else {
-        return false;
-    };
-    if !(1900..=2999).contains(&year) || !(1..=12).contains(&month) {
-        return false;
-    }
-    let max_day = match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => return false,
-    };
-    (1..=max_day).contains(&day)
+    Ok(Some(format!("{year:04}-{month:02}-{day:02}")))
 }
 
 fn build_period_label(
@@ -481,9 +489,21 @@ pub fn export_annual_report_xlsx(
     filter: &AnnualReportFilter,
     mode: ReportMode,
     output_path: impl AsRef<Path>,
-) -> AppResult<AnnualSubstanceReport> {
-    let report = query_annual_substance_totals(conn, filter)?;
+) -> AppResult<ReportExportResult> {
     let out_path = output_path.as_ref();
+    if out_path.as_os_str().is_empty() || out_path.to_string_lossy().trim().is_empty() {
+        return Err(AppError::Validation(
+            "내보낼 엑셀 파일 경로를 지정해 주세요.".to_string(),
+        ));
+    }
+    if out_path.is_dir() {
+        return Err(AppError::Validation(format!(
+            "유효한 파일 경로가 아닙니다 (디렉토리): {}",
+            out_path.display()
+        )));
+    }
+
+    let report = query_annual_substance_totals(conn, filter)?;
     if let Some(parent) = out_path.parent() {
         if !parent.as_os_str().is_empty() {
             std::fs::create_dir_all(parent)?;
@@ -493,11 +513,15 @@ pub fn export_annual_report_xlsx(
     let mut wb = Workbook::new();
     let styles = ExportFormats::new();
 
-    match mode {
+    let (sheet_count, message) = match mode {
         ReportMode::ExternalSummary => {
             let sheet = wb.add_worksheet();
             write_summary_sheet(sheet, "연간물질집계_요약", &report, &styles)
                 .map_err(xlsx_to_app_error)?;
+            (
+                1usize,
+                "대외 제출용 요약본(.xlsx, 1개 시트 · 함유율% 제외) 내보내기 완료 — CAS번호 텍스트(@) 포맷 적용".to_string(),
+            )
         }
         ReportMode::InternalDetail => {
             let summary_sheet = wb.add_worksheet();
@@ -507,11 +531,20 @@ pub fn export_annual_report_xlsx(
             let detail_sheet = wb.add_worksheet();
             write_detail_sheet(detail_sheet, "2_수입실적별_상세내역", &report, &styles)
                 .map_err(xlsx_to_app_error)?;
+            (
+                2usize,
+                "내부 검증용 상세본(.xlsx, 2개 시트) 내보내기 완료 — CAS번호·수입제품코드 텍스트(@) 포맷 적용".to_string(),
+            )
         }
-    }
+    };
 
     wb.save(out_path).map_err(xlsx_to_app_error)?;
-    Ok(report)
+    Ok(ReportExportResult {
+        saved_path: out_path.display().to_string(),
+        sheet_count,
+        message,
+        report,
+    })
 }
 
 struct ExportFormats {

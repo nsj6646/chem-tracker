@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { subscribeDbRestoredEvent } from "../lib/ipc";
 import {
   type AnnualReportFilter,
   type AnnualSubstanceReport,
@@ -198,8 +199,15 @@ export function AnnualReportSheet({ model }: { model: ReportDisplayModel }) {
   );
 }
 
-export function AnnualReportWorkspace() {
+export interface AnnualReportWorkspaceProps {
+  refreshKey?: number;
+}
+
+export function AnnualReportWorkspace({
+  refreshKey = 0,
+}: AnnualReportWorkspaceProps = {}) {
   const client = useMemo(() => createReportClient(), []);
+  const [restoreTick, setRestoreTick] = useState(0);
   const [options, setOptions] = useState<ReportFilterOptions>({
     years: [2026],
     domestic_importers: [],
@@ -217,6 +225,12 @@ export function AnnualReportWorkspace() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    return subscribeDbRestoredEvent(() => {
+      setRestoreTick((prev) => prev + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     let active = true;
     client
       .getFilterOptions()
@@ -229,6 +243,21 @@ export function AnnualReportWorkspace() {
             prev.targetYear !== null && loaded.years.includes(prev.targetYear)
               ? prev.targetYear
               : loaded.years[0] ?? null,
+          domesticImporterId:
+            prev.domesticImporterId !== null &&
+            loaded.domestic_importers.some((i) => i.id === prev.domesticImporterId)
+              ? prev.domesticImporterId
+              : null,
+          overseasBranchId:
+            prev.overseasBranchId !== null &&
+            loaded.overseas_branches.some((b) => b.id === prev.overseasBranchId)
+              ? prev.overseasBranchId
+              : null,
+          productId:
+            prev.productId !== null &&
+            loaded.imported_products.some((p) => p.id === prev.productId)
+              ? prev.productId
+              : null,
         }));
       })
       .catch((err) => {
@@ -239,7 +268,7 @@ export function AnnualReportWorkspace() {
     return () => {
       active = false;
     };
-  }, [client]);
+  }, [client, refreshKey, restoreTick]);
 
   useEffect(() => {
     const validationErr = validateReportFilter(filter);
@@ -269,7 +298,7 @@ export function AnnualReportWorkspace() {
     return () => {
       active = false;
     };
-  }, [client, filter]);
+  }, [client, filter, refreshKey, restoreTick]);
 
   const handleExportXlsx = async () => {
     const validationErr = validateReportFilter(filter);
@@ -282,7 +311,9 @@ export function AnnualReportWorkspace() {
     setErrorMessage(null);
     try {
       const result = await client.exportXlsx(filter, mode);
-      setFeedbackMessage(result.message);
+      if (result) {
+        setFeedbackMessage(result.message);
+      }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : String(err));
     } finally {

@@ -1,6 +1,7 @@
 //! Compact Master Management Modals (`국내 수입사`, `해외지사`, `화학물질`) & delete guards.
 //! Implemented in Ticket 04.
 
+use crate::domain::normalize_cas_number as shared_normalize_cas_number;
 use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBehavior};
 
@@ -59,35 +60,9 @@ fn trim_optional(input: Option<&str>) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Normalizes a CAS number by trimming surrounding whitespace, converting Unicode dashes
-/// to ASCII `-`, removing spaces around `-`, and collapsing remaining whitespace.
+/// Normalizes a CAS number (re-exported from `crate::domain::normalize_cas_number`).
 pub fn normalize_cas_number(raw: &str) -> String {
-    let unified_dashes = raw
-        .trim()
-        .replace(['\u{2010}', '\u{2011}', '\u{2012}', '\u{2013}', '\u{2014}', '\u{2212}'], "-");
-    let mut out = String::with_capacity(unified_dashes.len());
-    let mut prev_space = false;
-    for ch in unified_dashes.chars() {
-        if ch.is_whitespace() {
-            prev_space = true;
-            continue;
-        }
-        if ch == '-' {
-            // Strip any space right before '-'
-            if out.ends_with(' ') {
-                out.pop();
-            }
-            out.push('-');
-            prev_space = false;
-            continue;
-        }
-        if prev_space && !out.is_empty() && !out.ends_with('-') {
-            out.push(' ');
-        }
-        out.push(ch);
-        prev_space = false;
-    }
-    out
+    shared_normalize_cas_number(raw)
 }
 
 /// Lists all master records of `kind` with their current foreign-key reference counts.
@@ -95,19 +70,44 @@ pub fn list_master_items(
     conn: &Connection,
     kind: MasterEntityKind,
 ) -> AppResult<Vec<MasterItem>> {
+    query_master_items(conn, kind, None)
+}
+
+/// Queries either all master items of `kind` or a single row filtered directly by primary key `id`.
+fn query_master_items(
+    conn: &Connection,
+    kind: MasterEntityKind,
+    target_id: Option<i64>,
+) -> AppResult<Vec<MasterItem>> {
+    let id_val = target_id.unwrap_or_default();
+    let single_param: [&dyn rusqlite::ToSql; 1] = [&id_val];
+    let params_slice: &[&dyn rusqlite::ToSql] = if target_id.is_some() {
+        &single_param
+    } else {
+        &[]
+    };
     match kind {
         MasterEntityKind::DomesticImporter => {
-            let mut stmt = conn.prepare(
+            let sql = if target_id.is_some() {
                 "SELECT
                     di.id,
                     di.name,
                     di.note,
                     (SELECT COUNT(*) FROM import_shipments s WHERE s.domestic_importer_id = di.id) AS shipment_count
                  FROM domestic_importers di
-                 ORDER BY di.name COLLATE NOCASE ASC, di.id ASC;",
-            )?;
+                 WHERE di.id = ?1;"
+            } else {
+                "SELECT
+                    di.id,
+                    di.name,
+                    di.note,
+                    (SELECT COUNT(*) FROM import_shipments s WHERE s.domestic_importer_id = di.id) AS shipment_count
+                 FROM domestic_importers di
+                 ORDER BY di.name COLLATE NOCASE ASC, di.id ASC;"
+            };
+            let mut stmt = conn.prepare(sql)?;
             let rows = stmt
-                .query_map([], |row| {
+                .query_map(params_slice, |row| {
                     let shipment_count: i64 = row.get(3)?;
                     Ok(MasterItem {
                         id: row.get(0)?,
@@ -126,7 +126,7 @@ pub fn list_master_items(
             Ok(rows)
         }
         MasterEntityKind::OverseasBranch => {
-            let mut stmt = conn.prepare(
+            let sql = if target_id.is_some() {
                 "SELECT
                     ob.id,
                     ob.name,
@@ -134,10 +134,20 @@ pub fn list_master_items(
                     (SELECT COUNT(*) FROM imported_products ip WHERE ip.overseas_branch_id = ob.id) AS product_count,
                     (SELECT COUNT(*) FROM import_shipments s WHERE s.overseas_branch_id = ob.id) AS shipment_count
                  FROM overseas_branches ob
-                 ORDER BY ob.name COLLATE NOCASE ASC, ob.id ASC;",
-            )?;
+                 WHERE ob.id = ?1;"
+            } else {
+                "SELECT
+                    ob.id,
+                    ob.name,
+                    ob.note,
+                    (SELECT COUNT(*) FROM imported_products ip WHERE ip.overseas_branch_id = ob.id) AS product_count,
+                    (SELECT COUNT(*) FROM import_shipments s WHERE s.overseas_branch_id = ob.id) AS shipment_count
+                 FROM overseas_branches ob
+                 ORDER BY ob.name COLLATE NOCASE ASC, ob.id ASC;"
+            };
+            let mut stmt = conn.prepare(sql)?;
             let rows = stmt
-                .query_map([], |row| {
+                .query_map(params_slice, |row| {
                     let product_count: i64 = row.get(3)?;
                     let shipment_count: i64 = row.get(4)?;
                     Ok(MasterItem {
@@ -157,17 +167,26 @@ pub fn list_master_items(
             Ok(rows)
         }
         MasterEntityKind::ChemicalSubstance => {
-            let mut stmt = conn.prepare(
+            let sql = if target_id.is_some() {
                 "SELECT
                     cs.id,
                     cs.cas_number,
                     cs.substance_name,
                     (SELECT COUNT(*) FROM product_components pc WHERE pc.substance_id = cs.id) AS component_count
                  FROM chemical_substances cs
-                 ORDER BY cs.cas_number ASC, cs.id ASC;",
-            )?;
+                 WHERE cs.id = ?1;"
+            } else {
+                "SELECT
+                    cs.id,
+                    cs.cas_number,
+                    cs.substance_name,
+                    (SELECT COUNT(*) FROM product_components pc WHERE pc.substance_id = cs.id) AS component_count
+                 FROM chemical_substances cs
+                 ORDER BY cs.cas_number ASC, cs.id ASC;"
+            };
+            let mut stmt = conn.prepare(sql)?;
             let rows = stmt
-                .query_map([], |row| {
+                .query_map(params_slice, |row| {
                     let component_count: i64 = row.get(3)?;
                     Ok(MasterItem {
                         id: row.get(0)?,
@@ -193,9 +212,9 @@ fn fetch_master_item(
     kind: MasterEntityKind,
     id: i64,
 ) -> AppResult<MasterItem> {
-    list_master_items(conn, kind)?
+    query_master_items(conn, kind, Some(id))?
         .into_iter()
-        .find(|item| item.id == id)
+        .next()
         .ok_or_else(|| {
             AppError::Validation(format!(
                 "{} 항목을 찾을 수 없습니다 (ID: {id}).",
@@ -388,9 +407,9 @@ pub fn delete_master_item(
 ) -> AppResult<DeleteMasterResult> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
-    let item = list_master_items(&tx, kind)?
+    let item = query_master_items(&tx, kind, Some(id))?
         .into_iter()
-        .find(|entry| entry.id == id)
+        .next()
         .ok_or_else(|| {
             AppError::Validation(format!(
                 "삭제할 {}을(를) 찾을 수 없습니다 (ID: {id}).",

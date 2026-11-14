@@ -4,6 +4,9 @@
 use crate::decimal::{
     format_percentage, from_scaled_4dp, parse_decimal_4dp, HUNDRED_PERCENT_SCALED,
 };
+use crate::domain::{
+    normalize_cas_number, upsert_chemical_substance, upsert_overseas_branch,
+};
 use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBehavior};
 use std::collections::HashSet;
@@ -290,7 +293,7 @@ fn validate_save_input(
     let mut total_scaled: i64 = 0;
 
     for (idx, comp) in input.components.iter().enumerate() {
-        let cas = comp.cas_number.trim().to_string();
+        let cas = normalize_cas_number(&comp.cas_number);
         if cas.is_empty() {
             return Err(AppError::Validation(format!(
                 "{}번째 구성성분의 CAS번호를 입력해 주세요.",
@@ -337,57 +340,6 @@ fn validate_save_input(
     }
 
     Ok((product_code, product_name, branch_name, validated))
-}
-
-fn upsert_overseas_branch(tx: &Transaction<'_>, name: &str) -> AppResult<i64> {
-    if let Some(existing_id) = tx
-        .query_row(
-            "SELECT id FROM overseas_branches WHERE name = ?1 COLLATE NOCASE;",
-            [name],
-            |row| row.get::<_, i64>(0),
-        )
-        .optional()?
-    {
-        return Ok(existing_id);
-    }
-
-    tx.execute(
-        "INSERT INTO overseas_branches (name) VALUES (?1);",
-        [name],
-    )?;
-    Ok(tx.last_insert_rowid())
-}
-
-fn upsert_chemical_substance(
-    tx: &Transaction<'_>,
-    cas_number: &str,
-    substance_name: Option<&str>,
-) -> AppResult<i64> {
-    if let Some(existing_id) = tx
-        .query_row(
-            "SELECT id FROM chemical_substances WHERE cas_number = ?1;",
-            [cas_number],
-            |row| row.get::<_, i64>(0),
-        )
-        .optional()?
-    {
-        if let Some(name) = substance_name {
-            tx.execute(
-                "UPDATE chemical_substances
-                 SET substance_name = ?1,
-                     updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-                 WHERE id = ?2;",
-                params![name, existing_id],
-            )?;
-        }
-        return Ok(existing_id);
-    }
-
-    tx.execute(
-        "INSERT INTO chemical_substances (cas_number, substance_name) VALUES (?1, ?2);",
-        params![cas_number, substance_name],
-    )?;
-    Ok(tx.last_insert_rowid())
 }
 
 fn upsert_product_row(

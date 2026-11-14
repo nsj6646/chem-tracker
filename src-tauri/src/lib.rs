@@ -1,6 +1,7 @@
 pub mod backup;
 pub mod db;
 pub mod decimal;
+pub mod domain;
 pub mod error;
 pub mod excel_import;
 pub mod masters;

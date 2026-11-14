@@ -25,9 +25,27 @@ export interface IpcClient {
   seedSampleData(): Promise<SeedResult>;
 }
 
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+export const DB_RESTORED_EVENT = "chem-tracker:db-restored";
 
-function detectTauriInvoke(): TauriInvoke | null {
+export function subscribeDbRestoredEvent(onRestored: () => void): () => void {
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+    return () => {};
+  }
+  const handler = () => {
+    onRestored();
+  };
+  window.addEventListener(DB_RESTORED_EVENT, handler);
+  return () => {
+    window.removeEventListener(DB_RESTORED_EVENT, handler);
+  };
+}
+
+export type TauriInvoke = <T>(
+  cmd: string,
+  args?: Record<string, unknown>,
+) => Promise<T>;
+
+export function detectTauriInvoke(): TauriInvoke | null {
   const g = globalThis as {
     __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
   };

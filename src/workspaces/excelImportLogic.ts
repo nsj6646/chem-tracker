@@ -1,8 +1,11 @@
 import {
   HUNDRED_PERCENT_SCALED,
   formatPct,
+  normalizeCasNumber,
   parseScaled4dp,
+  validateIsoCalendarDate,
 } from "../lib/decimal";
+import { type TauriInvoke, detectTauriInvoke } from "../lib/ipc";
 
 export type ImportKind = "bom" | "shipments";
 export type PreviewRowStatus = "valid" | "conflict" | "error";
@@ -412,34 +415,14 @@ function normalizeCalendarDateText(raw: string): { ok: true; date: string } | { 
     }
   }
 
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(candidate);
-  if (!m) {
-    return { ok: false, error: `수입일자는 YYYY-MM-DD 형식이어야 합니다: '${raw}'` };
-  }
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  const day = Number(m[3]);
-  if (year < 1900 || year > 2100 || month < 1 || month > 12) {
-    return { ok: false, error: `올바른 수입일자(연/월)가 아닙니다: '${raw}'` };
-  }
-  const daysInMonth = [
-    31,
-    (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31,
-  ][month - 1];
-  if (day < 1 || day > daysInMonth) {
-    return { ok: false, error: `존재하지 않는 날짜입니다: '${raw}'` };
-  }
-  return { ok: true, date: candidate };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(candidate)) {
+      return { ok: false, error: `수입일자는 YYYY-MM-DD 형식이어야 합니다: '${raw}'` };
+    }
+    const validated = validateIsoCalendarDate(candidate, 1900, 2100);
+    if (!validated) {
+      return { ok: false, error: `존재하지 않는 날짜이거나 허용 연도(1900~2100) 범위 밖입니다: '${raw}'` };
+    }
+    return { ok: true, date: validated };
 }
 
 export function parseCsvImportPreview(
@@ -502,7 +485,7 @@ function previewBomCsvRows(
     const branch = (raw.cells[colBranch!] ?? "").trim();
     const productCode = (raw.cells[colCode!] ?? "").trim();
     const productName = colProdName !== null ? (raw.cells[colProdName] ?? "").trim() || null : null;
-    const cas = (raw.cells[colCas!] ?? "").trim();
+    const cas = normalizeCasNumber(raw.cells[colCas!] ?? "");
     const substanceName = colSubName !== null ? (raw.cells[colSubName] ?? "").trim() || null : null;
     const pctRaw = (raw.cells[colPct!] ?? "").trim();
 
@@ -874,17 +857,6 @@ function previewShipmentCsvRows(
     bom_products: [],
     rows,
   };
-}
-
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
 }
 
 export function createExcelImportClient(
