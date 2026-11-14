@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { subscribeDbRestoredEvent } from "../lib/ipc";
 import { MasterModal } from "./MasterModal";
 import {
   computeLiveWeightPreview,
@@ -24,6 +25,7 @@ const VIRTUAL_OVERSCAN = 8;
 
 export interface ShipmentsWorkspaceProps {
   client?: ShipmentsClient;
+  refreshKey?: number;
   onOpenMasterModal?: (target: "domestic_importer") => void;
 }
 
@@ -36,9 +38,11 @@ const DEFAULT_FILTER: ShipmentFilter = {
 
 export function ShipmentsWorkspace({
   client,
+  refreshKey = 0,
   onOpenMasterModal,
 }: ShipmentsWorkspaceProps) {
   const api = useMemo(() => client ?? createShipmentsClient(), [client]);
+  const [restoreTick, setRestoreTick] = useState(0);
 
   const [importers, setImporters] = useState<DomesticImporterOption[]>([]);
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -97,11 +101,15 @@ export function ShipmentsWorkspace({
         setImporters(impList);
         setProducts(prodList);
         setQueryResult(qRes);
-        setForm((prev) =>
-          prev.productId == null && prodList.length > 0
-            ? { ...prev, productId: prodList[0].product_id }
-            : prev,
-        );
+        setForm((prev) => {
+          const validSelected =
+            prev.productId !== null &&
+            prodList.some((p) => p.product_id === prev.productId);
+          return {
+            ...prev,
+            productId: validSelected ? prev.productId : prodList[0]?.product_id ?? null,
+          };
+        });
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : String(err));
       } finally {
@@ -112,12 +120,18 @@ export function ShipmentsWorkspace({
   );
 
   useEffect(() => {
+    return subscribeDbRestoredEvent(() => {
+      setRestoreTick((prev) => prev + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     setScrollTop(0);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
     void refreshAll(filter);
-  }, [refreshAll, filter]);
+  }, [refreshAll, filter, refreshKey, restoreTick]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,7 +361,7 @@ export function ShipmentsWorkspace({
                 fontWeight: 600,
               }}
             >
-              환산 중량 (ton): {livePreview.valid ? `${livePreview.tonText} ton` : "-"}
+              제품 환산 중량 (ton): {livePreview.valid ? `${livePreview.tonText} ton` : "-"}
             </span>
           </div>
           <input
@@ -551,7 +565,7 @@ export function ShipmentsWorkspace({
                 제품 수입량 (kg)
               </th>
               <th style={{ ...styles.th, width: 125, textAlign: "right" }}>
-                환산 중량 (ton)
+                제품 환산 중량 (ton)
               </th>
               <th style={{ ...styles.th, width: 160 }}>비고</th>
               <th style={{ ...styles.th, width: 115, textAlign: "center" }}>

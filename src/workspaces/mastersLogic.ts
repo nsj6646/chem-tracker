@@ -1,3 +1,8 @@
+import { normalizeCasNumber } from "../lib/decimal";
+import { type TauriInvoke, detectTauriInvoke } from "../lib/ipc";
+
+export { normalizeCasNumber };
+
 export type MasterEntityKind =
   | "domestic_importer"
   | "overseas_branch"
@@ -56,17 +61,6 @@ export interface MastersIpcClient {
   ): Promise<DeleteMasterResult>;
 }
 
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
-}
-
 const MASTER_ENTITY_META: Record<MasterEntityKind, MasterEntityMeta> = {
   domestic_importer: {
     kind: "domestic_importer",
@@ -99,16 +93,6 @@ const MASTER_ENTITY_META: Record<MasterEntityKind, MasterEntityMeta> = {
 
 export function getMasterEntityMeta(kind: MasterEntityKind): MasterEntityMeta {
   return MASTER_ENTITY_META[kind];
-}
-
-export function normalizeCasNumber(raw: string): string {
-  const unified = raw
-    .trim()
-    .replace(/[\u2010-\u2015\u2212]/g, "-");
-  return unified
-    .replace(/\s*-\s*/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 export function formatMasterReferenceSummary(item: MasterItem): string {

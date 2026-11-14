@@ -1,4 +1,12 @@
-import { formatKg, formatPct, parseScaled4dp } from "../lib/decimal";
+import {
+  formatBigIntFixed,
+  formatKg,
+  formatPct,
+  parseScaled4dp,
+  roundHalfAway,
+  validateIsoCalendarDate,
+} from "../lib/decimal";
+import { type TauriInvoke, detectTauriInvoke } from "../lib/ipc";
 
 export type ReportMode = "external_summary" | "internal_detail";
 export type PeriodMode = "year" | "custom_range";
@@ -79,9 +87,19 @@ export interface ReportDisplayModel {
   rows: SubstanceSummaryRow[];
 }
 
+export interface SerializedAnnualReportFilter {
+  period_mode: PeriodMode;
+  target_year: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  domestic_importer_id: number | null;
+  overseas_branch_id: number | null;
+  product_id: number | null;
+}
+
 export interface ReportExportResult {
-  savedPath: string;
-  sheetCount: number;
+  saved_path: string;
+  sheet_count: number;
   message: string;
 }
 
@@ -235,15 +253,44 @@ export function createDefaultReportFilter(
 }
 
 export function isValidIsoDate(value: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (!m) return false;
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  const day = Number(m[3]);
-  if (year < 1900 || year > 2999 || month < 1 || month > 12) return false;
-  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const maxDays = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return day >= 1 && day <= maxDays[month - 1];
+  return validateIsoCalendarDate(value, 1900, 2999) !== null;
+}
+
+export function toSerializedReportFilter(
+  filter: AnnualReportFilter,
+): SerializedAnnualReportFilter {
+  if (filter.periodMode === "custom_range") {
+    return {
+      period_mode: "custom_range",
+      target_year: null,
+      start_date: filter.startDate.trim() || null,
+      end_date: filter.endDate.trim() || null,
+      domestic_importer_id: filter.domesticImporterId,
+      overseas_branch_id: filter.overseasBranchId,
+      product_id: filter.productId,
+    };
+  }
+  return {
+    period_mode: "year",
+    target_year: filter.targetYear,
+    start_date: null,
+    end_date: null,
+    domestic_importer_id: filter.domesticImporterId,
+    overseas_branch_id: filter.overseasBranchId,
+    product_id: filter.productId,
+  };
+}
+
+export function defaultReportExportFilename(
+  mode: ReportMode,
+  filter?: AnnualReportFilter,
+): string {
+  const fileTag = mode === "internal_detail" ? "내부검증용_상세본" : "대외제출용_요약본";
+  const yearTag =
+    filter?.periodMode === "year" && filter.targetYear !== null
+      ? `_${filter.targetYear}`
+      : "";
+  return `연간물질집계_${fileTag}${yearTag}.xlsx`;
 }
 
 export function validateReportFilter(filter: AnnualReportFilter): string | null {
@@ -264,48 +311,18 @@ export function validateReportFilter(filter: AnnualReportFilter): string | null 
   return null;
 }
 
-function roundHalfAwayBigInt(value: bigint, divisor: bigint): bigint {
-  const neg = value < 0n;
-  const abs = neg ? -value : value;
-  const q = abs / divisor;
-  const rem = abs % divisor;
-  const rounded = rem * 2n >= divisor ? q + 1n : q;
-  return neg && rounded !== 0n ? -rounded : rounded;
-}
-
-function formatBigIntFixed(
-  scaled: bigint,
-  scale: number,
-  minDp: number,
-  maxDp: number,
-): string {
-  const neg = scaled < 0n;
-  const abs = neg ? -scaled : scaled;
-  const factor = 10n ** BigInt(scale);
-  const intPart = abs / factor;
-  const fracVal = abs % factor;
-  const intStr = intPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const fracFull = fracVal.toString().padStart(scale, "0").slice(0, maxDp);
-  let fracTrimmed = fracFull.replace(/0+$/, "");
-  while (fracTrimmed.length < minDp) {
-    fracTrimmed += "0";
-  }
-  const sign = neg ? "-" : "";
-  return fracTrimmed.length > 0 ? `${sign}${intStr}.${fracTrimmed}` : `${sign}${intStr}`;
-}
-
 function formatKg1e10(kg1e10: bigint): string {
-  const scaled4dp = roundHalfAwayBigInt(kg1e10, 1_000_000n);
-  return formatKg(Number(scaled4dp));
+  const scaled4dp = roundHalfAway(kg1e10, 1_000_000n);
+  return formatBigIntFixed(scaled4dp, 4, 2, 4, true);
 }
 
 function formatTon1e10(kg1e10: bigint): string {
-  const scaledTon4 = roundHalfAwayBigInt(kg1e10, 1_000_000_000n);
+  const scaledTon4 = roundHalfAway(kg1e10, 1_000_000_000n);
   if (kg1e10 !== 0n && scaledTon4 === 0n) {
-    const scaledTon5 = roundHalfAwayBigInt(kg1e10, 100_000_000n);
-    return formatBigIntFixed(scaledTon5, 5, 5, 5);
+    const scaledTon5 = roundHalfAway(kg1e10, 100_000_000n);
+    return formatBigIntFixed(scaledTon5, 5, 5, 5, true);
   }
-  return formatBigIntFixed(scaledTon4, 4, 4, 4);
+  return formatBigIntFixed(scaledTon4, 4, 4, 4, true);
 }
 
 function formatPeriodLabel(filter: AnnualReportFilter): string {
@@ -574,29 +591,58 @@ export function renderPrintableReportHtml(
 export interface ReportClient {
   getFilterOptions(): Promise<ReportFilterOptions>;
   queryAnnualTotals(filter: AnnualReportFilter): Promise<AnnualSubstanceReport>;
-  exportXlsx(filter: AnnualReportFilter, mode: ReportMode): Promise<ReportExportResult>;
-}
-
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
+  pickExportSavePath?(
+    mode: ReportMode,
+    filter?: AnnualReportFilter,
+  ): Promise<string | null>;
+  exportXlsx(
+    filter: AnnualReportFilter,
+    mode: ReportMode,
+    outputPath?: string,
+  ): Promise<ReportExportResult | null>;
 }
 
 export function createReportClient(invokeOverride?: TauriInvoke): ReportClient {
   const invoke = invokeOverride ?? detectTauriInvoke();
   if (invoke) {
+    const pickExportSavePath = async (
+      mode: ReportMode,
+      filter?: AnnualReportFilter,
+    ): Promise<string | null> => {
+      const picked = await invoke<string | null>("plugin:dialog|save", {
+        options: {
+          title: "연간 물질 집계 보고서 저장 (.xlsx)",
+          defaultPath: defaultReportExportFilename(mode, filter),
+          filters: [{ name: "Excel Workbook", extensions: ["xlsx"] }],
+        },
+      });
+      return picked && picked.trim().length > 0 ? picked.trim() : null;
+    };
+
     return {
       getFilterOptions: () => invoke<ReportFilterOptions>("get_report_filter_options"),
       queryAnnualTotals: (filter) =>
-        invoke<AnnualSubstanceReport>("query_annual_substance_totals", { filter }),
-      exportXlsx: (filter, mode) =>
-        invoke<ReportExportResult>("export_annual_report_xlsx", { filter, mode }),
+        invoke<AnnualSubstanceReport>("query_annual_substance_totals", {
+          filter: toSerializedReportFilter(filter),
+        }),
+      pickExportSavePath,
+      exportXlsx: async (filter, mode, outputPath) => {
+        const validationErr = validateReportFilter(filter);
+        if (validationErr) {
+          throw new Error(validationErr);
+        }
+        const targetPath = outputPath?.trim()
+          ? outputPath.trim()
+          : await pickExportSavePath(mode, filter);
+        if (!targetPath) {
+          return null;
+        }
+        return invoke<ReportExportResult>("export_annual_report_xlsx", {
+          filter: toSerializedReportFilter(filter),
+          mode,
+          outputPath: targetPath,
+        });
+      },
     };
   }
 
@@ -620,13 +666,16 @@ export function createReportClient(invokeOverride?: TauriInvoke): ReportClient {
     async queryAnnualTotals(filter): Promise<AnnualSubstanceReport> {
       return computeAnnualReportFromDataset(SEED_REPORT_DATASET, filter);
     },
-    async exportXlsx(_filter, mode): Promise<ReportExportResult> {
+    async exportXlsx(filter, mode, outputPath): Promise<ReportExportResult> {
+      const validationErr = validateReportFilter(filter);
+      if (validationErr) {
+        throw new Error(validationErr);
+      }
       const isInternal = mode === "internal_detail";
-      const fileTag = isInternal ? "내부검증용_상세본" : "대외제출용_요약본";
       const sheetCount = isInternal ? 2 : 1;
       return {
-        savedPath: `연간물질집계_${fileTag}.xlsx`,
-        sheetCount,
+        saved_path: outputPath?.trim() || defaultReportExportFilename(mode, filter),
+        sheet_count: sheetCount,
         message: isInternal
           ? "내부 검증용 상세본(.xlsx, 2개 시트) 내보내기 준비 완료 — CAS번호·수입제품코드 텍스트(@) 포맷 적용"
           : "대외 제출용 요약본(.xlsx, 1개 시트 · 함유율% 제외) 내보내기 준비 완료 — CAS번호 텍스트(@) 포맷 적용",

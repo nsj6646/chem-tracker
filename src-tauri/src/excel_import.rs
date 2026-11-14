@@ -4,6 +4,10 @@
 use crate::decimal::{
     format_percentage, from_scaled_4dp, parse_decimal_4dp, HUNDRED_PERCENT_SCALED,
 };
+use crate::domain::{
+    normalize_cas_number, upsert_chemical_substance, upsert_domestic_importer,
+    upsert_overseas_branch,
+};
 use crate::error::{AppError, AppResult};
 use crate::shipments::validate_shipment_date;
 use calamine::{open_workbook_auto, Data, Reader};
@@ -612,7 +616,7 @@ fn preview_bom(
         } else {
             Some(product_name_str)
         };
-        let cas = get_cell_text(raw, Some(cols.cas_number));
+        let cas = normalize_cas_number(&get_cell_text(raw, Some(cols.cas_number)));
         let sub_name_str = get_cell_text(raw, cols.substance_name);
         let substance_name = if sub_name_str.is_empty() {
             None
@@ -1351,7 +1355,7 @@ fn commit_bom_import(
             continue;
         }
 
-        let branch_id = upsert_overseas_branch_tx(tx, &product.overseas_branch_name)?;
+        let branch_id = upsert_overseas_branch(tx, &product.overseas_branch_name)?;
         let product_id = match existing_id {
             Some(pid) => {
                 tx.execute(
@@ -1407,7 +1411,7 @@ fn commit_bom_import(
             })?;
 
             let substance_id =
-                upsert_chemical_substance_tx(tx, cas, row.substance_name.as_deref())?;
+                upsert_chemical_substance(tx, cas, row.substance_name.as_deref())?;
             tx.execute(
                 "INSERT INTO product_components (product_id, substance_id, weight_pct_text, weight_pct_scaled)
                  VALUES (?1, ?2, ?3, ?4);",
@@ -1474,7 +1478,7 @@ fn commit_shipments_import(
                 ))
             })?;
 
-        let importer_id = upsert_domestic_importer_tx(tx, importer_name)?;
+        let importer_id = upsert_domestic_importer(tx, importer_name)?;
 
         tx.execute(
             "INSERT INTO import_shipments (
@@ -1512,67 +1516,6 @@ fn commit_shipments_import(
         total_processed,
         message,
     })
-}
-
-fn upsert_overseas_branch_tx(tx: &Transaction<'_>, name: &str) -> AppResult<i64> {
-    if let Some(existing_id) = tx
-        .query_row(
-            "SELECT id FROM overseas_branches WHERE name = ?1 COLLATE NOCASE;",
-            [name],
-            |r| r.get::<_, i64>(0),
-        )
-        .optional()?
-    {
-        return Ok(existing_id);
-    }
-    tx.execute("INSERT INTO overseas_branches (name) VALUES (?1);", [name])?;
-    Ok(tx.last_insert_rowid())
-}
-
-fn upsert_chemical_substance_tx(
-    tx: &Transaction<'_>,
-    cas_number: &str,
-    substance_name: Option<&str>,
-) -> AppResult<i64> {
-    if let Some(existing_id) = tx
-        .query_row(
-            "SELECT id FROM chemical_substances WHERE cas_number = ?1;",
-            [cas_number],
-            |r| r.get::<_, i64>(0),
-        )
-        .optional()?
-    {
-        if let Some(name) = substance_name {
-            tx.execute(
-                "UPDATE chemical_substances
-                 SET substance_name = ?1,
-                     updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-                 WHERE id = ?2;",
-                params![name, existing_id],
-            )?;
-        }
-        return Ok(existing_id);
-    }
-    tx.execute(
-        "INSERT INTO chemical_substances (cas_number, substance_name) VALUES (?1, ?2);",
-        params![cas_number, substance_name],
-    )?;
-    Ok(tx.last_insert_rowid())
-}
-
-fn upsert_domestic_importer_tx(tx: &Transaction<'_>, name: &str) -> AppResult<i64> {
-    if let Some(existing_id) = tx
-        .query_row(
-            "SELECT id FROM domestic_importers WHERE name = ?1 COLLATE NOCASE;",
-            [name],
-            |r| r.get::<_, i64>(0),
-        )
-        .optional()?
-    {
-        return Ok(existing_id);
-    }
-    tx.execute("INSERT INTO domestic_importers (name) VALUES (?1);", [name])?;
-    Ok(tx.last_insert_rowid())
 }
 
 fn excel_serial_to_ymd(serial: f64) -> Option<String> {

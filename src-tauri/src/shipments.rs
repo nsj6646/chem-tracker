@@ -2,6 +2,7 @@
 //! Implemented in Ticket 03.
 
 use crate::decimal::{format_kg, format_ton, from_scaled_4dp, parse_decimal_4dp};
+use crate::domain::{upsert_domestic_importer, validate_calendar_date};
 use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension};
 use rust_decimal::Decimal;
@@ -142,54 +143,13 @@ pub fn list_product_options(conn: &Connection) -> AppResult<Vec<ProductOption>> 
 
 /// Validates an ISO-8601 `YYYY-MM-DD` calendar date and returns its normalized string.
 pub fn validate_shipment_date(raw: &str) -> AppResult<String> {
-    let trimmed = raw.trim();
-    let bytes = trimmed.as_bytes();
-    if bytes.len() != 10
-        || bytes[4] != b'-'
-        || bytes[7] != b'-'
-        || !bytes[0..4].iter().all(|b| b.is_ascii_digit())
-        || !bytes[5..7].iter().all(|b| b.is_ascii_digit())
-        || !bytes[8..10].iter().all(|b| b.is_ascii_digit())
-    {
-        return Err(AppError::Validation(format!(
-            "수입일자는 YYYY-MM-DD 형식이어야 합니다: '{raw}'"
-        )));
-    }
-
-    let year: i32 = trimmed[0..4].parse().unwrap();
-    let month: u32 = trimmed[5..7].parse().unwrap();
-    let day: u32 = trimmed[8..10].parse().unwrap();
-
-    if !(1900..=2100).contains(&year) || !(1..=12).contains(&month) {
+    let (year, month, day) = validate_calendar_date(raw)?;
+    if !(1900..=2100).contains(&year) {
         return Err(AppError::Validation(format!(
             "올바른 수입일자(연/월)가 아닙니다: '{raw}'"
         )));
     }
-
-    let max_day = days_in_month(year, month);
-    if day < 1 || day > max_day {
-        return Err(AppError::Validation(format!(
-            "존재하지 않는 날짜입니다: '{raw}'"
-        )));
-    }
-
-    Ok(trimmed.to_string())
-}
-
-fn days_in_month(year: i32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            let is_leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-            if is_leap {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 0,
-    }
+    Ok(format!("{year:04}-{month:02}-{day:02}"))
 }
 
 /// Creates or updates an Import Shipment (`수입실적`), performing inline creation of
@@ -233,23 +193,7 @@ pub fn save_shipment(conn: &Connection, input: SaveShipmentInput) -> AppResult<S
         })?;
 
     // Inline upsert for domestic importer (name is UNIQUE COLLATE NOCASE)
-    let domestic_importer_id: i64 = match tx
-        .query_row(
-            "SELECT id FROM domestic_importers WHERE name = ?1;",
-            [importer_name],
-            |r| r.get(0),
-        )
-        .optional()?
-    {
-        Some(existing_id) => existing_id,
-        None => {
-            tx.execute(
-                "INSERT INTO domestic_importers (name) VALUES (?1);",
-                [importer_name],
-            )?;
-            tx.last_insert_rowid()
-        }
-    };
+    let domestic_importer_id = upsert_domestic_importer(&tx, importer_name)?;
 
     let shipment_id = match input.id {
         Some(existing_id) => {

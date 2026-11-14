@@ -1,8 +1,10 @@
 import {
   HUNDRED_PERCENT_SCALED,
   formatPct,
+  normalizeCasNumber,
   parseScaled4dp,
 } from "../lib/decimal";
+import { type TauriInvoke, detectTauriInvoke } from "../lib/ipc";
 
 export interface ProductListItem {
   id: number;
@@ -99,17 +101,6 @@ export interface ProductsIpcClient {
   deleteProduct(productId: number): Promise<DeleteProductResult>;
 }
 
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
-}
-
 export function evaluateBomGauge(rows: readonly BomRowDraft[]): BomGaugeEvaluation {
   let sumScaled = 0;
   const seenCas = new Set<string>();
@@ -122,7 +113,7 @@ export function evaluateBomGauge(rows: readonly BomRowDraft[]): BomGaugeEvaluati
 
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    const cas = row.casNumber.trim();
+    const cas = normalizeCasNumber(row.casNumber);
     if (!cas) {
       rowErrors.push(`${i + 1}번째 행의 CAS번호를 입력해 주세요.`);
     } else if (seenCas.has(cas)) {

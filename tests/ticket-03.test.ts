@@ -320,7 +320,7 @@ describe("Ticket 03 Shipments Logic & Virtual Grid", () => {
       "수입제품코드",
       "해외지사",
       "제품 수입량 (kg)",
-      "환산 중량 (ton)",
+      "제품 환산 중량 (ton)",
       "비고",
       "수정",
       "삭제",

@@ -79,12 +79,57 @@ export function formatTonFromKgScaled(kgScaled4dp: number): string {
   const scaledTon4 = roundHalfAway(BigInt(kgScaled4dp), 1000n);
   if (kgScaled4dp !== 0 && scaledTon4 === 0n) {
     const scaledTon5 = roundHalfAway(BigInt(kgScaled4dp), 100n);
-    return formatBigIntScaled(scaledTon5, 5, 5, 5, true);
+    return formatBigIntFixed(scaledTon5, 5, 5, 5, true);
   }
-  return formatBigIntScaled(scaledTon4, 4, 4, 4, true);
+  return formatBigIntFixed(scaledTon4, 4, 4, 4, true);
 }
 
-function roundHalfAway(value: bigint, divisor: bigint): bigint {
+/**
+ * Normalizes a CAS number by trimming surrounding whitespace, converting Unicode dashes
+ * (`\u2010`..`\u2015`, `\u2212`) to ASCII `-`, removing spaces around `-`, and collapsing spaces.
+ */
+export function normalizeCasNumber(raw: string): string {
+  const unified = raw
+    .trim()
+    .replace(/[\u2010-\u2015\u2212]/g, "-");
+  return unified
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Validates a strict `YYYY-MM-DD` Gregorian calendar date within `[minYear, maxYear]`.
+ * Returns the trimmed `YYYY-MM-DD` string when valid, or `null` otherwise.
+ */
+export function validateIsoCalendarDate(
+  raw: string,
+  minYear = 1900,
+  maxYear = 2100,
+): string | null {
+  const trimmed = raw.trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < minYear || year > maxYear || month < 1 || month > 12) return null;
+
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const maxDays =
+    month === 2
+      ? isLeap
+        ? 29
+        : 28
+      : [4, 6, 9, 11].includes(month)
+        ? 30
+        : 31;
+
+  if (day < 1 || day > maxDays) return null;
+  return trimmed;
+}
+
+export function roundHalfAway(value: bigint, divisor: bigint): bigint {
   const neg = value < 0n;
   const abs = neg ? -value : value;
   const q = abs / divisor;
@@ -100,15 +145,15 @@ function formatFixedScaled(
   maxDp: number,
   groupThousands: boolean,
 ): string {
-  return formatBigIntScaled(BigInt(scaled), scale, minDp, maxDp, groupThousands);
+  return formatBigIntFixed(BigInt(scaled), scale, minDp, maxDp, groupThousands);
 }
 
-function formatBigIntScaled(
+export function formatBigIntFixed(
   scaled: bigint,
   scale: number,
   minDp: number,
   maxDp: number,
-  groupThousands: boolean,
+  groupThousands = true,
 ): string {
   const neg = scaled < 0n;
   const abs = neg ? -scaled : scaled;

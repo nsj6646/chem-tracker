@@ -2,7 +2,11 @@ import {
   formatKg,
   formatTonFromKgScaled,
   parseScaled4dp,
+  validateIsoCalendarDate,
 } from "../lib/decimal";
+import { type TauriInvoke, detectTauriInvoke } from "../lib/ipc";
+
+export { validateIsoCalendarDate };
 
 export interface OverseasBranchOption {
   id: number;
@@ -241,17 +245,6 @@ export interface ShipmentsClient {
   deleteShipment(shipmentId: number): Promise<void>;
 }
 
-type TauriInvoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
-function detectTauriInvoke(): TauriInvoke | null {
-  const g = globalThis as {
-    __TAURI_INTERNALS__?: { invoke?: TauriInvoke };
-  };
-  return typeof g.__TAURI_INTERNALS__?.invoke === "function"
-    ? g.__TAURI_INTERNALS__.invoke
-    : null;
-}
-
 export function createShipmentsClient(
   invokeOverride?: TauriInvoke,
 ): ShipmentsClient {
@@ -431,29 +424,6 @@ export function createShipmentsClient(
       }
     },
   };
-}
-
-export function validateIsoCalendarDate(raw: string): string | null {
-  const trimmed = raw.trim();
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (year < 1900 || year > 2100 || month < 1 || month > 12) return null;
-
-  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const maxDays =
-    month === 2
-      ? isLeap
-        ? 29
-        : 28
-      : [4, 6, 9, 11].includes(month)
-        ? 30
-        : 31;
-
-  if (day < 1 || day > maxDays) return null;
-  return trimmed;
 }
 
 export function computeLiveWeightPreview(weightInput: string): LiveWeightPreview {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useReducer } from "react";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { DatabaseFooterPanel } from "./components/DatabaseFooterPanel";
 import {
   APP_TITLE,
@@ -7,7 +7,7 @@ import {
   formatDbStatusSummary,
   reduceShellState,
 } from "./lib/appState";
-import { createIpcClient } from "./lib/ipc";
+import { type DbStatus, createIpcClient } from "./lib/ipc";
 import { AnnualReportWorkspace } from "./workspaces/AnnualReportWorkspace";
 import { ExcelImportWorkspace } from "./workspaces/ExcelImportWorkspace";
 import { ProductsWorkspace } from "./workspaces/ProductsWorkspace";
@@ -15,6 +15,7 @@ import { ShipmentsWorkspace } from "./workspaces/ShipmentsWorkspace";
 
 export function App() {
   const ipc = useMemo(() => createIpcClient(), []);
+  const [dbRevision, setDbRevision] = useState(0);
   const [state, dispatch] = useReducer(
     reduceShellState,
     undefined,
@@ -48,12 +49,18 @@ export function App() {
     try {
       const result = await ipc.seedSampleData();
       dispatch({ type: "SEED_SUCCEEDED", result });
+      setDbRevision((prev) => prev + 1);
     } catch (err) {
       dispatch({
         type: "SEED_FAILED",
         message: err instanceof Error ? err.message : String(err),
       });
     }
+  };
+
+  const handleDatabaseRestored = (status: DbStatus) => {
+    dispatch({ type: "DB_STATUS_LOADED", status });
+    setDbRevision((prev) => prev + 1);
   };
 
   return (
@@ -92,14 +99,15 @@ export function App() {
           feedbackMessage={state.feedbackMessage}
           errorMessage={state.errorMessage}
           onSeedSampleData={handleSeedSampleData}
+          onDatabaseRestored={handleDatabaseRestored}
         />
       </aside>
 
       <main className="workspace-main">
-        {state.activeTab === "bom" && <ProductsWorkspace />}
-        {state.activeTab === "shipments" && <ShipmentsWorkspace />}
-        {state.activeTab === "excel" && <ExcelImportWorkspace />}
-        {state.activeTab === "report" && <AnnualReportWorkspace />}
+        {state.activeTab === "bom" && <ProductsWorkspace refreshKey={dbRevision} />}
+        {state.activeTab === "shipments" && <ShipmentsWorkspace refreshKey={dbRevision} />}
+        {state.activeTab === "excel" && <ExcelImportWorkspace refreshKey={dbRevision} />}
+        {state.activeTab === "report" && <AnnualReportWorkspace refreshKey={dbRevision} />}
       </main>
     </div>
   );

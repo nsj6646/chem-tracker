@@ -1,4 +1,5 @@
-import React, { useMemo, useReducer, useRef } from "react";
+import React, { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { subscribeDbRestoredEvent } from "../lib/ipc";
 import {
   type BomProductSummary,
   type ExcelImportClient,
@@ -16,6 +17,7 @@ import {
 
 export interface ExcelImportWorkspaceProps {
   client?: ExcelImportClient;
+  refreshKey?: number;
   onImportCommitted?: (result: ImportCommitResult) => void;
 }
 
@@ -80,6 +82,7 @@ function formatError(err: unknown): string {
 
 export function ExcelImportWorkspace({
   client: clientProp,
+  refreshKey = 0,
   onImportCommitted,
 }: ExcelImportWorkspaceProps) {
   const client = useMemo(
@@ -91,7 +94,24 @@ export function ExcelImportWorkspace({
     "bom",
     createInitialImportState,
   );
+  const [restoreTick, setRestoreTick] = useState(0);
+  const prevRefreshSigRef = useRef(`${refreshKey}:0`);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return subscribeDbRestoredEvent(() => {
+      setRestoreTick((prev) => prev + 1);
+    });
+  }, []);
+
+  useEffect(() => {
+    const nextSig = `${refreshKey}:${restoreTick}`;
+    if (prevRefreshSigRef.current === nextSig) {
+      return;
+    }
+    prevRefreshSigRef.current = nextSig;
+    dispatch({ type: "CLEAR_PREVIEW" });
+  }, [refreshKey, restoreTick]);
 
   const conflictCopy = getConflictToggleCopy(state.kind);
   const commitAllowed = canCommitImport(state);

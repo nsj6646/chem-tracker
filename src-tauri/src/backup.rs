@@ -2,6 +2,7 @@
 //! and Windows 11 WebView2 low-memory configuration helpers.
 
 use crate::db::{get_db_status, open_connection, DbStatus, REQUIRED_TABLES};
+use crate::domain::validate_calendar_date;
 use crate::error::{AppError, AppResult};
 use rusqlite::{Connection, OpenFlags};
 use std::collections::HashSet;
@@ -400,57 +401,27 @@ fn unique_sibling_path(dir: &Path, prefix: &str, ext: &str) -> PathBuf {
 /// from a `YYYY-MM-DD` or `YYYYMMDD` calendar date string.
 pub fn default_backup_filename(date: &str) -> AppResult<String> {
     let trimmed = date.trim();
-    let compact: String = if trimmed.len() == 10
-        && trimmed.as_bytes()[4] == b'-'
-        && trimmed.as_bytes()[7] == b'-'
-    {
-        format!("{}{}{}", &trimmed[0..4], &trimmed[5..7], &trimmed[8..10])
-    } else if trimmed.len() == 8 {
+    let iso = if trimmed.len() == 8 && trimmed.bytes().all(|b| b.is_ascii_digit()) {
+        format!("{}-{}-{}", &trimmed[0..4], &trimmed[4..6], &trimmed[6..8])
+    } else if trimmed.len() == 10 {
         trimmed.to_string()
     } else {
         return Err(AppError::Validation(
-            "백업 파일명 생성을 위한 날짜 형식이 올바르지 않습니다 (YYYY-MM-DD 또는 YYYYMMDD).".to_string(),
+            "백업 파일명 생성을 위한 날짜 형식이 올바르지 않습니다 (YYYY-MM-DD 또는 YYYYMMDD)."
+                .to_string(),
         ));
     };
 
-    if !compact.bytes().all(|b| b.is_ascii_digit()) {
-        return Err(AppError::Validation(
-            "백업 날짜에는 숫자만 포함되어야 합니다.".to_string(),
-        ));
-    }
-
-    let year: i32 = compact[0..4].parse().map_err(|_| {
-        AppError::Validation("올바른 연도 형식이 아닙니다.".to_string())
-    })?;
-    let month: u32 = compact[4..6].parse().map_err(|_| {
-        AppError::Validation("올바른 월 형식이 아닙니다.".to_string())
-    })?;
-    let day: u32 = compact[6..8].parse().map_err(|_| {
-        AppError::Validation("올바른 일 형식이 아닙니다.".to_string())
-    })?;
-
-    if !(1..=12).contains(&month) || day == 0 || day > days_in_month(year, month) {
-        return Err(AppError::Validation(format!(
-            "유효하지 않은 날짜입니다: {trimmed}"
-        )));
-    }
-
-    Ok(format!("chem-tracker-backup-{compact}.db"))
-}
-
-fn days_in_month(year: i32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            let is_leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-            if is_leap { 29 } else { 28 }
-        }
-        _ => 0,
-    }
+    let (year, month, day) = validate_calendar_date(&iso)?;
+    Ok(format!("chem-tracker-backup-{year:04}{month:02}{day:02}.db"))
 }
 
 /// Windows 11 WebView2 low-memory tuning policy (`CoreWebView2MemoryUsageTargetLevel::Low`).
+///
+/// Offline workspace note: the standalone `chem_tracker` library compiles without `tauri`
+/// so `cargo test --offline` succeeds in airgapped environments. Once `tauri` is added to
+/// `src-tauri/Cargo.toml`, wire this policy in the Tauri v2 desktop runner setup alongside
+/// `WebViewExtWindows::set_memory_usage_level(MemoryUsageLevel::Low)` on the `"main"` window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WebView2MemoryPolicy {
     pub memory_usage_target_level: &'static str,
@@ -469,9 +440,11 @@ pub fn webview2_low_memory_policy() -> WebView2MemoryPolicy {
     WINDOWS_WEBVIEW2_POLICY
 }
 
-/// Applies the Windows-specific WebView2 low-memory environment hint before
-/// WebView2 environment creation. Paired with `WebViewExtWindows::set_memory_usage_level(MemoryUsageLevel::Low)`
-/// in the desktop runner.
+/// Applies the Windows `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` process environment hint
+/// before WebView2 environment initialization.
+///
+/// Companion host call `WebViewExtWindows::set_memory_usage_level(MemoryUsageLevel::Low)`
+/// is pending Tauri v2 desktop runner wiring in `src-tauri/src/main.rs`.
 #[cfg(target_os = "windows")]
 pub fn apply_windows_webview2_low_memory_hook() -> WebView2MemoryPolicy {
     if std::env::var_os("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").is_none() {

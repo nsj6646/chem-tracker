@@ -12,12 +12,14 @@ import {
   evaluateBomGauge,
   filterProductList,
 } from "./productsLogic";
-import { formatPct } from "../lib/decimal";
+import { formatPct, normalizeCasNumber } from "../lib/decimal";
+import { subscribeDbRestoredEvent } from "../lib/ipc";
 
 export type MasterModalTarget = "overseas_branch" | "chemical_substance";
 
 export interface ProductsWorkspaceProps {
   ipc?: ProductsIpcClient;
+  refreshKey?: number;
   onOpenMasterModal?: (target: MasterModalTarget) => void;
   onProductsChanged?: () => void;
 }
@@ -59,11 +61,13 @@ function detailToDraft(detail: ProductDetail): ProductEditorDraft {
 
 export function ProductsWorkspace({
   ipc: ipcProp,
+  refreshKey = 0,
   onOpenMasterModal,
   onProductsChanged,
 }: ProductsWorkspaceProps) {
   const ipc = useMemo(() => ipcProp ?? createProductsIpcClient(), [ipcProp]);
   const casDatalistId = useId();
+  const [restoreTick, setRestoreTick] = useState(0);
 
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [branches, setBranches] = useState<OverseasBranchOption[]>([]);
@@ -118,6 +122,12 @@ export function ProductsWorkspace({
   );
 
   useEffect(() => {
+    return subscribeDbRestoredEvent(() => {
+      setRestoreTick((prev) => prev + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     let active = true;
     setLoading(true);
     loadReferenceAndList()
@@ -135,7 +145,7 @@ export function ProductsWorkspace({
     return () => {
       active = false;
     };
-  }, [loadReferenceAndList]);
+  }, [loadReferenceAndList, refreshKey, restoreTick]);
 
   const filteredProducts = useMemo(
     () => filterProductList(products, searchText, filterBranchId),
@@ -295,7 +305,7 @@ export function ProductsWorkspace({
         product_name: draft.productName.trim() || null,
         overseas_branch_name: draft.overseasBranchName.trim(),
         components: draft.components.map((c) => ({
-          cas_number: c.casNumber.trim(),
+          cas_number: normalizeCasNumber(c.casNumber),
           substance_name: c.substanceName.trim() || null,
           weight_pct_text: c.weightPctText.trim(),
         })),
