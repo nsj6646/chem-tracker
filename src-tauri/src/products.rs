@@ -349,34 +349,36 @@ fn upsert_product_row(
     product_name: Option<&str>,
     overseas_branch_id: i64,
 ) -> AppResult<(i64, bool)> {
+    if let Some(target_id) = id {
+        let exists: Option<i64> = tx
+            .query_row(
+                "SELECT id FROM imported_products WHERE id = ?1;",
+                [target_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if exists.is_none() {
+            return Err(AppError::Validation(format!(
+                "수정할 수입제품을 찾을 수 없습니다 (ID: {target_id})."
+            )));
+        }
+    }
+
+    let conflict: Option<i64> = tx
+        .query_row(
+            "SELECT id FROM imported_products WHERE product_code = ?1 COLLATE NOCASE AND (?2 IS NULL OR id != ?2);",
+            params![product_code, id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if conflict.is_some() {
+        return Err(AppError::Validation(format!(
+            "이미 사용 중인 수입제품코드입니다: '{product_code}'"
+        )));
+    }
+
     match id {
         Some(target_id) => {
-            let exists: Option<i64> = tx
-                .query_row(
-                    "SELECT id FROM imported_products WHERE id = ?1;",
-                    [target_id],
-                    |row| row.get(0),
-                )
-                .optional()?;
-            if exists.is_none() {
-                return Err(AppError::Validation(format!(
-                    "수정할 수입제품을 찾을 수 없습니다 (ID: {target_id})."
-                )));
-            }
-
-            let conflict: Option<i64> = tx
-                .query_row(
-                    "SELECT id FROM imported_products WHERE product_code = ?1 COLLATE NOCASE AND id != ?2;",
-                    params![product_code, target_id],
-                    |row| row.get(0),
-                )
-                .optional()?;
-            if conflict.is_some() {
-                return Err(AppError::Validation(format!(
-                    "이미 사용 중인 수입제품코드입니다: '{product_code}'"
-                )));
-            }
-
             tx.execute(
                 "UPDATE imported_products
                  SET product_code = ?1,
@@ -389,32 +391,12 @@ fn upsert_product_row(
             Ok((target_id, false))
         }
         None => {
-            if let Some(existing_id) = tx
-                .query_row(
-                    "SELECT id FROM imported_products WHERE product_code = ?1 COLLATE NOCASE;",
-                    [product_code],
-                    |row| row.get::<_, i64>(0),
-                )
-                .optional()?
-            {
-                tx.execute(
-                    "UPDATE imported_products
-                     SET product_code = ?1,
-                         product_name = ?2,
-                         overseas_branch_id = ?3,
-                         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-                     WHERE id = ?4;",
-                    params![product_code, product_name, overseas_branch_id, existing_id],
-                )?;
-                Ok((existing_id, false))
-            } else {
-                tx.execute(
-                    "INSERT INTO imported_products (product_code, product_name, overseas_branch_id)
-                     VALUES (?1, ?2, ?3);",
-                    params![product_code, product_name, overseas_branch_id],
-                )?;
-                Ok((tx.last_insert_rowid(), true))
-            }
+            tx.execute(
+                "INSERT INTO imported_products (product_code, product_name, overseas_branch_id)
+                 VALUES (?1, ?2, ?3);",
+                params![product_code, product_name, overseas_branch_id],
+            )?;
+            Ok((tx.last_insert_rowid(), true))
         }
     }
 }

@@ -121,6 +121,23 @@ describe("Ticket 02 Frontend Products & BOM Logic", () => {
     expect(created.created).toBe(true);
     expect(created.product.product_code).toBe("PRD-JP-501");
 
+    // Creating again with the same product_code (case-insensitive) must be rejected
+    await expect(
+      ipc.saveProductWithBom({
+        id: null,
+        product_code: "prd-jp-501",
+        product_name: "중복 코드",
+        overseas_branch_name: "일본신규지사 (오사카)",
+        components: [
+          {
+            cas_number: "50-00-0",
+            substance_name: "포름알데히드",
+            weight_pct_text: "100",
+          },
+        ],
+      }),
+    ).rejects.toThrow("이미 사용 중인 수입제품코드입니다");
+
     // Newly created branch and substance appear in lookups
     const branchesAfter = await ipc.listOverseasBranches();
     expect(branchesAfter.some((b) => b.name === "일본신규지사 (오사카)")).toBe(true);

@@ -461,18 +461,14 @@ function createOfflineProductsIpc(): ProductsIpcClient {
         if (targetIdx < 0) {
           throw new Error(`수정할 수입제품을 찾을 수 없습니다 (ID: ${input.id}).`);
         }
-        const conflict = products.find(
-          (p) =>
-            p.id !== input.id &&
-            p.product_code.toLowerCase() === code.toLowerCase(),
-        );
-        if (conflict) {
-          throw new Error(`이미 사용 중인 수입제품코드입니다: '${code}'`);
-        }
-      } else {
-        targetIdx = products.findIndex(
-          (p) => p.product_code.toLowerCase() === code.toLowerCase(),
-        );
+      }
+      const conflict = products.find(
+        (p) =>
+          p.id !== input.id &&
+          p.product_code.toLowerCase() === code.toLowerCase(),
+      );
+      if (conflict) {
+        throw new Error(`이미 사용 중인 수입제품코드입니다: '${code}'`);
       }
 
       const detail: ProductDetail = {

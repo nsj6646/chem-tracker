@@ -367,8 +367,8 @@ fn slice3_update_upsert_substance_names_and_product_filtering() {
     );
     assert_eq!(list_overseas_branches(&conn).unwrap().len(), 2);
 
-    // Upsert by product_code when id is None (case-insensitive)
-    let upserted = save_product_with_bom(
+    // Creating with id: None must reject duplicate product_code (case-insensitive) instead of overwriting
+    let dup_create = save_product_with_bom(
         &mut conn,
         &SaveProductInput {
             id: None,
@@ -382,9 +382,8 @@ fn slice3_update_upsert_substance_names_and_product_filtering() {
             }],
         },
     )
-    .expect("upsert by product_code");
-    assert!(!upserted.created);
-    assert_eq!(upserted.product.id, p2.product.id);
+    .expect_err("duplicate product_code on create must fail");
+    assert!(dup_create.to_string().contains("이미 사용 중인 수입제품코드입니다"));
 
     // Updating p1 to collide with p2's code must fail
     let conflict = save_product_with_bom(
