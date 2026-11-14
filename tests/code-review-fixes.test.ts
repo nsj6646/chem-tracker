@@ -175,7 +175,7 @@ describe("Code review fixes verification", () => {
         "유럽지사 (독일),PRD-CAS-1,시험제,67-64-1,아세톤,50",
         "유럽지사 (독일),PRD-CAS-1,시험제,67 \u{2013} 64 - 1,아세톤,50",
       ].join("\n"),
-      { existingProductCodes: [], existingProducts: [], existingShipmentSignatures: new Set() },
+      { existingProductCodes: [], existingShipments: [] },
     );
     expect(csvPreview.can_commit).toBe(false);
     expect(csvPreview.error_count).toBe(2);

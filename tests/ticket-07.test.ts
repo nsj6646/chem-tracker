@@ -97,7 +97,7 @@ describe("Ticket 07 Frontend Backup & Restore Logic", () => {
       state = reduceBackupPanelState(state, action);
     };
 
-    let refreshedStatus: DbStatus | null = null;
+    const refreshedStatuses: DbStatus[] = [];
 
     // 1. Corrupt / schema-incompatible file rejection surfaces Korean error and skips refresh
     const failingAdapter: BackupIpcAdapter = {
@@ -119,13 +119,13 @@ describe("Ticket 07 Frontend Backup & Restore Logic", () => {
 
     const failOk = await executeBackupRestore(failingAdapter, dispatch, {
       onRestored: (status) => {
-        refreshedStatus = status;
+        refreshedStatuses.push(status);
       },
     });
     expect(failOk).toBe(false);
     expect(state.busyAction).toBe("none");
     expect(state.errorMessage).toContain("PRAGMA integrity_check");
-    expect(refreshedStatus).toBeNull();
+    expect(refreshedStatuses).toEqual([]);
 
     // 2. Successful restore invokes onRestored callback and records pre-restore safety path
     const okAdapter: BackupIpcAdapter = {
@@ -144,7 +144,7 @@ describe("Ticket 07 Frontend Backup & Restore Logic", () => {
 
     const ok = await executeBackupRestore(okAdapter, dispatch, {
       onRestored: (status) => {
-        refreshedStatus = status;
+        refreshedStatuses.push(status);
       },
     });
     expect(ok).toBe(true);
@@ -152,7 +152,7 @@ describe("Ticket 07 Frontend Backup & Restore Logic", () => {
     expect(state.errorMessage).toBeNull();
     expect(state.feedbackMessage).toContain("복원 완료");
     expect(state.lastPreRestorePath).toBe("C:\\Data\\data.pre-restore.db");
-    expect(refreshedStatus).toEqual(sampleStatus);
+    expect(refreshedStatuses).toEqual([sampleStatus]);
   });
 
   test("slice9: createBackupIpcAdapter wires Tauri commands & DatabaseFooterPanel compiles cleanly", async () => {
