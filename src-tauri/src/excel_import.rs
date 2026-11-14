@@ -18,27 +18,29 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ImportKind {
     Bom,
     Shipments,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PreviewRowStatus {
     Valid,
     Conflict,
     Error,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct TemplateDownloadResult {
     pub kind: ImportKind,
     pub output_path: String,
     pub sheet_name: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct BomProductSummary {
     pub product_code: String,
     pub product_name: Option<String>,
@@ -52,7 +54,7 @@ pub struct BomProductSummary {
     pub errors: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ImportPreviewRow {
     pub row_number: usize,
     pub status: PreviewRowStatus,
@@ -73,7 +75,7 @@ pub struct ImportPreviewRow {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ImportPreviewResult {
     pub kind: ImportKind,
     pub file_path: String,
@@ -89,7 +91,7 @@ pub struct ImportPreviewResult {
     pub rows: Vec<ImportPreviewRow>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
 pub struct ImportOptions {
     pub overwrite_existing: bool,
     pub skip_duplicates: bool,
@@ -104,7 +106,7 @@ impl Default for ImportOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ImportCommitResult {
     pub kind: ImportKind,
     pub inserted_count: usize,

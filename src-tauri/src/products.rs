@@ -11,7 +11,7 @@ use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBehavior};
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProductListItem {
     pub id: i64,
     pub product_code: String,
@@ -23,7 +23,7 @@ pub struct ProductListItem {
     pub is_valid_100_pct: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProductComponentDetail {
     pub id: i64,
     pub substance_id: i64,
@@ -33,7 +33,7 @@ pub struct ProductComponentDetail {
     pub weight_pct_scaled: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProductDetail {
     pub id: i64,
     pub product_code: String,
@@ -45,28 +45,28 @@ pub struct ProductDetail {
     pub components: Vec<ProductComponentDetail>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct OverseasBranchOption {
     pub id: i64,
     pub name: String,
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ChemicalSubstanceOption {
     pub id: i64,
     pub cas_number: String,
     pub substance_name: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct SaveBomComponentInput {
     pub cas_number: String,
     pub substance_name: Option<String>,
     pub weight_pct_text: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct SaveProductInput {
     pub id: Option<i64>,
     pub product_code: String,
@@ -75,13 +75,13 @@ pub struct SaveProductInput {
     pub components: Vec<SaveBomComponentInput>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SaveProductResult {
     pub product: ProductDetail,
     pub created: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct DeleteProductResult {
     pub deleted_product_id: i64,
     pub deleted_product_code: String,

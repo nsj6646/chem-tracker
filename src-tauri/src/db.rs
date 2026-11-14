@@ -138,7 +138,7 @@ pub fn open_connection(path: impl AsRef<Path>) -> AppResult<Connection> {
     Ok(conn)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct DbStatus {
     pub db_path: String,
     pub journal_mode: String,
@@ -151,7 +151,7 @@ pub struct DbStatus {
     pub import_shipments_count: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SeedResult {
     pub inserted_importers: usize,
     pub inserted_branches: usize,

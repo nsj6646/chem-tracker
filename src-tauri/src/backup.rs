@@ -13,14 +13,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const SQLITE_HEADER_MAGIC: &[u8; 16] = b"SQLite format 3\0";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct BackupResult {
     pub target_path: String,
     pub file_size_bytes: u64,
     pub status: DbStatus,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct BackupValidation {
     pub candidate_path: String,
     pub integrity_ok: bool,
@@ -28,7 +28,7 @@ pub struct BackupValidation {
     pub status: DbStatus,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RestoreResult {
     pub pre_restore_backup_path: String,
     pub status: DbStatus,
@@ -418,10 +418,8 @@ pub fn default_backup_filename(date: &str) -> AppResult<String> {
 
 /// Windows 11 WebView2 low-memory tuning policy (`CoreWebView2MemoryUsageTargetLevel::Low`).
 ///
-/// Offline workspace note: the standalone `chem_tracker` library compiles without `tauri`
-/// so `cargo test --offline` succeeds in airgapped environments. Once `tauri` is added to
-/// `src-tauri/Cargo.toml`, wire this policy in the Tauri v2 desktop runner setup alongside
-/// `WebViewExtWindows::set_memory_usage_level(MemoryUsageLevel::Low)` on the `"main"` window.
+/// Wired in `src-tauri/src/lib.rs` setup via `main_window.with_webview` calling
+/// `ICoreWebView2_19::SetMemoryUsageTargetLevel(COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL(1))`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WebView2MemoryPolicy {
     pub memory_usage_target_level: &'static str,
@@ -443,8 +441,7 @@ pub fn webview2_low_memory_policy() -> WebView2MemoryPolicy {
 /// Applies the Windows `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` process environment hint
 /// before WebView2 environment initialization.
 ///
-/// Companion host call `WebViewExtWindows::set_memory_usage_level(MemoryUsageLevel::Low)`
-/// is pending Tauri v2 desktop runner wiring in `src-tauri/src/main.rs`.
+/// Companion host call `ICoreWebView2_19::SetMemoryUsageTargetLevel` is wired in `src-tauri/src/lib.rs`.
 #[cfg(target_os = "windows")]
 pub fn apply_windows_webview2_low_memory_hook() -> WebView2MemoryPolicy {
     if std::env::var_os("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").is_none() {

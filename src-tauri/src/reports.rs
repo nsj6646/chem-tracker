@@ -12,7 +12,12 @@ use std::path::Path;
 use std::str::FromStr;
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+fn serialize_decimal<S: serde::Serializer>(val: &Decimal, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(&val.to_string())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ReportMode {
     /// Default external mode: omits confidential per-product recipe percentages.
     #[default]
@@ -21,7 +26,8 @@ pub enum ReportMode {
     InternalDetail,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ReportPeriodMode {
     /// Filter shipments by `target_year` (`YYYY` calendar year, or all years if `None`).
     #[default]
@@ -30,7 +36,7 @@ pub enum ReportPeriodMode {
     CustomRange,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Deserialize)]
 pub struct AnnualReportFilter {
     pub period_mode: ReportPeriodMode,
     pub target_year: Option<i32>,
@@ -41,7 +47,7 @@ pub struct AnnualReportFilter {
     pub product_id: Option<i64>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ReportExportResult {
     pub saved_path: String,
     pub sheet_count: usize,
@@ -49,13 +55,13 @@ pub struct ReportExportResult {
     pub report: AnnualSubstanceReport,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct FilterOption {
     pub id: i64,
     pub label: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProductFilterOption {
     pub id: i64,
     pub product_code: String,
@@ -63,7 +69,7 @@ pub struct ProductFilterOption {
     pub overseas_branch_id: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ReportFilterOptions {
     pub years: Vec<i32>,
     pub domestic_importers: Vec<FilterOption>,
@@ -71,7 +77,7 @@ pub struct ReportFilterOptions {
     pub imported_products: Vec<ProductFilterOption>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SubstanceShipmentBreakdown {
     pub shipment_id: i64,
     pub shipment_date: String,
@@ -79,31 +85,37 @@ pub struct SubstanceShipmentBreakdown {
     pub overseas_branch_name: String,
     pub product_code: String,
     pub product_name: Option<String>,
+    #[serde(serialize_with = "serialize_decimal")]
     pub import_weight_kg: Decimal,
     pub import_weight_kg_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub weight_pct: Decimal,
     pub weight_pct_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub substance_weight_kg: Decimal,
     pub substance_weight_kg_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub substance_weight_ton: Decimal,
     pub substance_weight_ton_formatted: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SubstanceSummaryRow {
     pub no: usize,
     pub substance_id: i64,
     pub cas_number: String,
     pub substance_name: Option<String>,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_substance_kg: Decimal,
     pub total_substance_kg_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_substance_ton: Decimal,
     pub total_substance_ton_formatted: String,
     pub shipment_count: usize,
     pub breakdown: Vec<SubstanceShipmentBreakdown>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct AnnualSubstanceReport {
     pub period_label: String,
     pub domestic_importer_label: String,
@@ -111,12 +123,16 @@ pub struct AnnualSubstanceReport {
     pub product_label: String,
     pub matching_shipment_count: usize,
     pub unique_substance_count: usize,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_product_weight_kg: Decimal,
     pub total_product_weight_kg_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_product_weight_ton: Decimal,
     pub total_product_weight_ton_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_substance_kg: Decimal,
     pub total_substance_kg_formatted: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_substance_ton: Decimal,
     pub total_substance_ton_formatted: String,
     pub rows: Vec<SubstanceSummaryRow>,

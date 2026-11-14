@@ -7,20 +7,20 @@ use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension};
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct OverseasBranchOption {
     pub id: i64,
     pub name: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct DomesticImporterOption {
     pub id: i64,
     pub name: String,
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProductOption {
     pub product_id: i64,
     pub product_code: String,
@@ -29,7 +29,7 @@ pub struct ProductOption {
     pub overseas_branch_name: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Deserialize)]
 pub struct ShipmentFilter {
     pub year: Option<i32>,
     pub domestic_importer_id: Option<i64>,
@@ -37,7 +37,7 @@ pub struct ShipmentFilter {
     pub search_text: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ShipmentSummary {
     pub total_count: usize,
     pub total_weight_kg_text: String,
@@ -46,14 +46,14 @@ pub struct ShipmentSummary {
     pub total_weight_kg_scaled: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ShipmentQueryResult {
     pub rows: Vec<ShipmentRecord>,
     pub summary: ShipmentSummary,
     pub available_years: Vec<i32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct SaveShipmentInput {
     pub id: Option<i64>,
     pub shipment_date: String,
@@ -63,7 +63,7 @@ pub struct SaveShipmentInput {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ShipmentRecord {
     pub id: i64,
     pub shipment_date: String,

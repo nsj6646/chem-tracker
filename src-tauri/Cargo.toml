@@ -17,7 +17,20 @@ rusqlite = { version = "0.31.0", features = ["bundled", "backup", "functions"] }
 calamine = "0.26.1"
 thiserror = "2.0.20"
 serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
 rust_decimal = { path = "../crates/rust_decimal" }
 rust_xlsxwriter = { path = "../crates/rust_xlsxwriter" }
 unicode_width = { path = "../crates/unicode_width" }
 csv = { path = "../crates/csv" }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows-core = "0.62"
+
+[dev-dependencies]
+tauri = { version = "2", features = ["test"] }

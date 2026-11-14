@@ -5,7 +5,8 @@ use crate::domain::normalize_cas_number as shared_normalize_cas_number;
 use crate::error::{AppError, AppResult};
 use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBehavior};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MasterEntityKind {
     DomesticImporter,
     OverseasBranch,
@@ -22,7 +23,7 @@ impl MasterEntityKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MasterItem {
     pub id: i64,
     pub kind: MasterEntityKind,
@@ -36,7 +37,7 @@ pub struct MasterItem {
     pub shipment_count: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct UpdateMasterItemInput {
     pub id: i64,
     pub kind: MasterEntityKind,
@@ -46,7 +47,7 @@ pub struct UpdateMasterItemInput {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct DeleteMasterResult {
     pub kind: MasterEntityKind,
     pub deleted_id: i64,

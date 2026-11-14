@@ -12,4 +12,10 @@ pub enum AppError {
     Io(#[from] std::io::Error),
 }
 
+impl serde::Serialize for AppError {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
 pub type AppResult<T> = Result<T, AppError>;
