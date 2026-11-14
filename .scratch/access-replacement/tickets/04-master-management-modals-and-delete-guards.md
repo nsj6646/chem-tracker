@@ -4,9 +4,9 @@
 
 **Blocked by:** 02: Imported Product (`수입제품`) & Confidential Product Recipe (`제품 구성성분` / BOM) Management, 03: Import Shipment (`수입실적`) Quick-Entry, Filtering & Virtualized History
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Clicking `[관리/수정]` next to `해외지사` or `[화학물질 관리/수정]` in Workspace 1, or `[수입사 관리/수정]` in Workspace 2, opens the compact Master Management modal listing all records for that master entity along with their current reference counts (e.g., referencing products, BOM components, or shipments).
-- [ ] Inline editing of a `Domestic Importer` `name`, `Overseas Branch` `name`, or `Chemical Substance` `cas_number` / `substance_name` validates uniqueness (case-insensitive for importer/branch names; normalized/trimmed for `CAS번호`) and immediately reflects the updated text across all referencing `Imported Product`, `Product Recipe`, and `Import Shipment` views.
-- [ ] Unreferenced master entities (reference count = `0`) can be deleted directly from the modal.
-- [ ] Attempting to delete a referenced `Domestic Importer`, `Overseas Branch`, or `Chemical Substance` is blocked by `ON DELETE RESTRICT` and surfaces a clear Korean error message stating the exact number of referencing records.
+- [x] Clicking `[관리/수정]` next to `해외지사` or `[화학물질 관리/수정]` in Workspace 1, or `[수입사 관리/수정]` in Workspace 2, opens the compact Master Management modal listing all records for that master entity along with their current reference counts (e.g., referencing products, BOM components, or shipments).
+- [x] Inline editing of a `Domestic Importer` `name`, `Overseas Branch` `name`, or `Chemical Substance` `cas_number` / `substance_name` validates uniqueness (case-insensitive for importer/branch names; normalized/trimmed for `CAS번호`) and immediately reflects the updated text across all referencing `Imported Product`, `Product Recipe`, and `Import Shipment` views.
+- [x] Unreferenced master entities (reference count = `0`) can be deleted directly from the modal.
+- [x] Attempting to delete a referenced `Domestic Importer`, `Overseas Branch`, or `Chemical Substance` is blocked by `ON DELETE RESTRICT` and surfaces a clear Korean error message stating the exact number of referencing records.
