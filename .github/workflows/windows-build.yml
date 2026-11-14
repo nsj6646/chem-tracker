@@ -36,32 +36,15 @@ jobs:
       - name: Run Rust unit & integration tests
         run: cargo test
 
-      # NOTE: `src-tauri/Cargo.toml` intentionally omits `tauri` and `tauri-plugin-dialog`
-      # in the offline development stage because vendored crates are not checked in.
-      # Once those dependencies are added online via crates.io and wired into `src-tauri/src/main.rs`,
-      # the steps below build and upload the Windows 11 NSIS installer automatically.
-      - name: Check Tauri desktop host crate wiring
-        id: tauri-check
-        shell: pwsh
-        run: |
-          if (Select-String -Path src-tauri/Cargo.toml -Pattern '^\s*tauri\s*=' -Quiet) {
-            "wired=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            Write-Host "Skipping NSIS bundle: add 'tauri' and 'tauri-plugin-dialog' to src-tauri/Cargo.toml in an online environment first."
-            "wired=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          }
-
       - name: Install Tauri CLI
-        if: steps.tauri-check.outputs.wired == 'true'
         run: cargo install tauri-cli --version "^2" --locked
 
       - name: Build Windows 11 NSIS installer
-        if: steps.tauri-check.outputs.wired == 'true'
         run: cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis
 
       - name: Upload NSIS installer artifact
-        if: steps.tauri-check.outputs.wired == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: chem-tracker-windows-nsis
-          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
