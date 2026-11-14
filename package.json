@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun test && bun run build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",

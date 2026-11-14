@@ -7,8 +7,8 @@
 
 ## Checks & environment
 
-- **Frontend checks**: `bun test && bunx tsc --noEmit && bun run build` (fall back to `~/.bun/bin/bun` when `bun` is not on `PATH`).
-- **Backend checks**: `cargo test --workspace`. On macOS, `#[cfg(target_os = "windows")]` WebView2 COM/manifest paths are only compiled and tested on `windows-latest` CI unless `cargo-xwin` is installed.
+- **Frontend checks**: `bun run check` (runs `tsc --noEmit`, `bun test`, `vite build`; fall back to `~/.bun/bin/bun` when `bun` is not on `PATH`).
+- **Backend checks**: `cargo test --workspace` and `cargo clippy --workspace --all-targets`. On macOS, `#[cfg(target_os = "windows")]` WebView2 COM/manifest paths are only compiled and tested on `windows-latest` CI unless `cargo-xwin` is installed.
 
 ## Agent skills
 

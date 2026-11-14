@@ -2,10 +2,14 @@ name: Windows 11 Build & Test
 
 on:
   push:
-    branches: [main, "feat/**"]
+    branches: [main]
   pull_request:
-    branches: [main, "feat/**"]
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   windows-build:
@@ -17,24 +21,27 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install frontend dependencies and run Bun tests
+      - name: Install frontend dependencies and run checks
         run: |
           bun install
-          bun test
-          bun run build
+          bun run check
 
       - name: Setup Rust toolchain (x86_64-pc-windows-msvc)
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
+          components: clippy
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "."
 
+      - name: Run Clippy lints
+        run: cargo clippy --workspace --all-targets -- -D warnings -A clippy::unnecessary-lazy-evaluations -A clippy::manual-range-contains -A clippy::bool-assert-comparison -A clippy::permissions-set-readonly-false
+
       - name: Run Rust unit & integration tests
-        run: cargo test
+        run: cargo test --workspace
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
